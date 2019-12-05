@@ -1,12 +1,13 @@
 import * as AWS from 'aws-sdk/global';
 import { CognitoRefreshToken } from 'amazon-cognito-identity-js';
+
 import { Observable, Observer, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
-import { CognitoService } from '../services/cognito.service';
-
 import sigV4Client from './sig-v4.service';
 import { HttpService } from './http.service';
+import { CognitoService } from './cognito.service';
+
 import { CognitoServiceConfig } from '../types/cognito.interface';
 
 export class CognitoHttpService {

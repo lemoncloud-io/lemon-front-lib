@@ -1,16 +1,18 @@
 const { CheckerPlugin } = require('awesome-typescript-loader');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+
 
 module.exports = {
     mode: 'production',
     context: __dirname + '/src',
     entry: {
-        LemonLib: './',
+        Lemon: './',
     },
     output: {
         path: __dirname + '/dist',
-        filename: 'lemon.libs.js',
+        filename: 'lemon.front.lib.js',
         libraryTarget: 'umd',
-        library: ['[name]'], // LemonLib
+        library: ['[name]'], // Lemon
         umdNamedDefine: true,
     },
     resolve: {
@@ -25,5 +27,5 @@ module.exports = {
             },
         ],
     },
-    plugins: [new CheckerPlugin()],
+    plugins: [new CheckerPlugin(), new UglifyJsPlugin()],
 };

@@ -30,7 +30,7 @@ export class AWSCredsService {
      * Gets the existing credentials, refreshing them if they are not yet loaded or have expired.
      * This will not attempt to reload credentials when they are already loaded into the AWS.config.credentials object.
      */
-    getCredentials(): Observable<AWS.CognitoIdentityCredentials> {
+    public getCredentials(): Observable<AWS.CognitoIdentityCredentials> {
         if (AWS.config.credentials == null || (<AWS.Credentials> AWS.config.credentials).needsRefresh()) {
             return this.cognitoService.getCurrentSession().pipe(
                 concatMap((session: CognitoUserSession) => {
@@ -68,7 +68,7 @@ export class AWSCredsService {
         };
         // optionally provide configuration to apply to the underlying service clients
         // if configuration is not provided, then configuration will be pulled from AWS.config
-        const serviceConfigs = <awsService.ServiceConfigurationOptions>{};
+        const serviceConfigs = <awsService.ServiceConfigurationOptions>{ };
         if (this.config.cognito_identity_endpoint) {
             // The endpoint URI to send requests to. The default endpoint is built from the configured region.
             // The endpoint should be a string like 'https://{service}.{region}.amazonaws.com'.

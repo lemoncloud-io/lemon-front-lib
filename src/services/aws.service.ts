@@ -7,21 +7,23 @@ import { CognitoUserSession } from 'amazon-cognito-identity-js';
 import { Observable, Observer } from 'rxjs';
 import { concatMap } from 'rxjs/operators';
 
-import { CognitoService, CognitoServiceConfig } from './cognito.service';
+import { CognitoService } from './cognito.service';
+import { CognitoServiceConfig } from '../types/cognito.interface';
 
 export class AWSCredsService {
 
     private loginUrl: string;
+    private config: CognitoServiceConfig;
 
     constructor(private cognitoService: CognitoService) {
-        const config: CognitoServiceConfig = environment;
+        this.config = this.cognitoService.getConfig();
 
-        this.loginUrl = 'cognito-idp.' + config.region.toLowerCase() + '.amazonaws.com/' + config.userPoolId;
-        if (config.cognito_idp_endpoint) {
-            this.loginUrl = config.cognito_idp_endpoint + '/' + config.userPoolId;
+        this.loginUrl = `cognito-idp.${this.config.region.toLowerCase()}.amazonaws.com/${this.config.userPoolId}`;
+        if (this.config.cognito_idp_endpoint) {
+            this.loginUrl = `${this.config.cognito_idp_endpoint}/${this.config.userPoolId}`;
         }
 
-        AWS.config.region = config.region;
+        AWS.config.region = this.config.region;
     }
 
     /*
@@ -39,8 +41,8 @@ export class AWSCredsService {
         } else {
             return this.getFreshCredentials();
         }
-
     }
+
     // Gets the existing credentials, refreshing them if they are not yet loaded or have expired.
     private getFreshCredentials(): Observable<AWS.CognitoIdentityCredentials> {
         return new Observable((observer: Observer<AWS.CognitoIdentityCredentials>) => {
@@ -59,7 +61,7 @@ export class AWSCredsService {
         const logins: CognitoIdentity.LoginsMap = {};
         logins[this.loginUrl] = session.getIdToken().getJwtToken();
         const params = {
-            IdentityPoolId: environment.identityPoolId, /* required */
+            IdentityPoolId: this.config.identityPoolId, /* required */
             Logins: {
                 [this.loginUrl]: session.getIdToken().getJwtToken()
             }
@@ -67,10 +69,10 @@ export class AWSCredsService {
         // optionally provide configuration to apply to the underlying service clients
         // if configuration is not provided, then configuration will be pulled from AWS.config
         const serviceConfigs = <awsService.ServiceConfigurationOptions>{};
-        if (environment.cognito_identity_endpoint) {
+        if (this.config.cognito_identity_endpoint) {
             // The endpoint URI to send requests to. The default endpoint is built from the configured region.
             // The endpoint should be a string like 'https://{service}.{region}.amazonaws.com'.
-            serviceConfigs.endpoint = environment.cognito_identity_endpoint;
+            serviceConfigs.endpoint = this.config.cognito_identity_endpoint;
         }
         return new AWS.CognitoIdentityCredentials(params as any, serviceConfigs);
     }

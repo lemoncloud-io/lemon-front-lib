@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosPromise, Method } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosPromise, Method, AxiosResponse } from 'axios';
 import { Observable } from 'rxjs/internal/Observable';
 
 export class HttpService {
@@ -53,7 +53,7 @@ export class HttpService {
         }
 
         return new Observable<T>(subscriber => {
-            request.then(response => {
+            request.then((response: AxiosResponse) => {
                 subscriber.next(response.data);
                 subscriber.complete();
             }).catch((err: Error) => {

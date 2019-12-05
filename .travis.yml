@@ -1,0 +1,27 @@
+language: node_js
+sudo: false
+node_js:
+  - 8
+install:
+  - npm install
+cache:
+  bundler: true
+  directories:
+    - node_modules
+script:
+  - npm run test
+after_success:
+  - ./node_modules/.bin/codecov
+before_deploy:
+  - npm run build
+deploy:
+  provider: npm
+  skip_cleanup: true
+  email: '$NPM_EMAIL'
+  api_key: '$NPM_TOKEN'
+  on:
+    branch: master
+branches:
+  only:
+  - master
+  - develop

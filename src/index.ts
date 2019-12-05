@@ -1,6 +1,3 @@
-// export Libraries
-
-// export * from './http';
 export * from './services/cognito.service';
 export * from './services/core.service';
 

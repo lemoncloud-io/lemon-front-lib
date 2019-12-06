@@ -7,7 +7,7 @@ import {
     CognitoUserAttribute,
     CognitoUserSession,
     ISignUpResult,
-    ICognitoUserPoolData, CognitoRefreshToken,
+    ICognitoUserPoolData, CognitoRefreshToken, ICognitoUserSessionData,
 } from 'amazon-cognito-identity-js';
 
 import { Subject, Observable, Observer } from 'rxjs';
@@ -65,7 +65,7 @@ export class CognitoService {
         );
     }
 
-    public refreshSession$(refreshToken: CognitoRefreshToken) {
+    public refreshSession$(refreshToken: CognitoRefreshToken): Observable<ICognitoUserSessionData> {
         return new Observable((observer: Observer<any>) => {
             const currentUser = this.userPool.getCurrentUser();
             currentUser.refreshSession(refreshToken, (err, session) => {
@@ -154,8 +154,8 @@ export class CognitoService {
         });
     }
 
-    public confirmNewPassword$(email: string, verificationCode: string, newPassword: string): Observable<any> {
-        return new Observable((observer: Observer<any>) => {
+    public confirmNewPassword$(email: string, verificationCode: string, newPassword: string): Observable<ForgotPasswordState> {
+        return new Observable((observer: Observer<ForgotPasswordState>) => {
             this.buildCognitoUser(email).confirmPassword(verificationCode, newPassword, {
                 onSuccess: () => {
                     observer.next(new ForgotPasswordSuccess('Matched Code'));

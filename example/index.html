@@ -4,17 +4,22 @@
 </head>
 <body>
 <script type="text/javascript" src="../dist/lemon.front.lib.js" charset="utf-8"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/rxjs/6.5.3/rxjs.umd.min.js" charset="utf-8"></script>
 <div class="log-form">
     <h2>Login to your account</h2>
-    <input type="text" id="username" title="username" placeholder="username" />
+    <input type="text" id="email" title="email" placeholder="email" />
     <input type="password" id="password" title="password" placeholder="password" />
     <button class="btn" onclick="loginToEureka()">Login</button>
+    <button class="btn" onclick="register()">Register</button>
+    <button class="btn" onclick="logout()">Logout</button>
 </div><!--end log form -->
 <div>
-    request
-    <button class="btn" onclick="requestAlarms()">request Alarms</button>
-    <h2 id="result"></h2>
+    Request
+    <button class="btn" onclick="getUserAttributes()">get user attributes</button>
+    <button class="btn" onclick="isAuthenticated()">check isAuthenticated</button>
+    <button class="btn" onclick="refreshSession()">get refreshSession</button>
+    <button class="btn" onclick="getAllInquiries()">request API Gateway</button>
+    <button class="btn" onclick="requestTestWithoutCredentials()">request w/o Credentials</button>
+    <h4 id="result"></h4>
 </div>
 
 <script type="text/javascript">
@@ -27,40 +32,117 @@
     };
     var lemonFrontCore = new Lemon.CoreService(options);
 
-    function getUserInfoFromCognito(attr) {
+    function createUserInfoObject(attr) {
         var result = {};
-        attr.map(item => {
+        attr.map(function(item) {
             result[item.getName()] = item.getValue();
             return item;
         });
         return result;
     }
 
-    function loginToEureka() {
-        var username = document.getElementById('username').value;
+    function register() {
+        var email = document.getElementById('email').value;
         var password = document.getElementById('password').value;
+        var nickname = 'tester';
 
-        lemonFrontCore.getCognitoInstance().authenticate(username, password).subscribe((res) => {
-            console.log(res);
-        });
+        lemonFrontCore.register({ email: email, password: password, nickname: nickname })
+            .then(function(res) {
+                console.log(res);
+                document.getElementById('result').innerText = JSON.stringify(res);
+            })
+            .catch(function(err) {
+                console.error(err);
+                document.getElementById('result').innerText = 'ERROR: ' + err.message;
+            });
     }
 
-    function requestAlarms() {
-        const isAuthenticated$ = lemonFrontCore.getCognitoInstance().isAuthenticated();
-        const request$ = isAuthenticated$.pipe(
-            filter(isAuth => isAuth),
-            switchMap(() => lemonFrontCore.getCognitoInstance().getUserAttributes()),
-            switchMap(attr => {
-                var cognitoUser = getUserInfoFromCognito(attr);
-                var owner = cognitoUser.sub || cognitoUser.email;
-                return lemonFrontCore.doSignedRequest$('GET', 'https://api.eureka.deals', '/alarms/' + owner);
-            }),
-        );
-        request$.subscribe((res) => {
-            document.getElementById('result').innerText = res;
-        })
+    function loginToEureka() {
+        var email = document.getElementById('email').value;
+        var password = document.getElementById('password').value;
+        lemonFrontCore.authenticate(email, password)
+            .then(function(res) {
+                console.log(res);
+                document.getElementById('result').innerText = JSON.stringify(res);
+                return lemonFrontCore.getCognitoIdentityCredentials(); // 로그인 후 Credentials 가져와야함
+            })
+            .catch(function(err) {
+                console.error(err);
+                document.getElementById('result').innerText = 'ERROR: ' + err.message;
+            });
     }
 
+    function logout() {
+        lemonFrontCore.logout();
+        location.reload();
+    }
+
+    function getUserAttributes() {
+        lemonFrontCore.getUserAttributes()
+            .then(function(attr) {
+                console.log(attr);
+                var obj = createUserInfoObject(attr);
+                document.getElementById('result').innerText = JSON.stringify(obj);
+            })
+            .catch(function(err) {
+                console.error(err);
+                document.getElementById('result').innerText = 'ERROR: ' + err.message;
+            });
+    }
+
+    function isAuthenticated() {
+        lemonFrontCore.isAuthenticated()
+            .then(function(res) {
+                console.log(res);
+                document.getElementById('result').innerText = res;
+            })
+            .catch(function(err) {
+                console.error(err);
+                document.getElementById('result').innerText = 'ERROR: ' + err.message;
+            });
+    }
+
+    function refreshSession() {
+        lemonFrontCore.getRefreshToken()
+            .then(function(token) {
+                console.log('token', token);
+                return lemonFrontCore.refreshSession(token);
+            })
+            .then(function(session) {
+                console.log('session', session);
+                document.getElementById('result').innerText = JSON.stringify(session);
+            })
+            .catch(function(err) {
+                console.error(err);
+                document.getElementById('result').innerText = 'ERROR: ' + err.message;
+            });
+    }
+
+    function getAllInquiries() {
+        var ENDPOINT = 'https://api.eureka.deals';
+        lemonFrontCore.requestWithSign('GET', ENDPOINT, '/hooks/main-items')
+            .then(function(items) {
+                console.log('items', items);
+                document.getElementById('result').innerText = JSON.stringify(items);
+            })
+            .catch(function(err) {
+                console.error(err);
+                document.getElementById('result').innerText = 'ERROR: ' + err.message;
+            });
+    }
+
+    function requestTestWithoutCredentials() {
+        var ENDPOINT = 'https://jsonplaceholder.typicode.com/todos/1';
+        lemonFrontCore.requestWithSign('GET', ENDPOINT, '/')
+            .then(function(mock) {
+                console.log('mock', mock);
+                document.getElementById('result').innerText = JSON.stringify(mock);
+            })
+            .catch(function(err) {
+                console.error(err);
+                document.getElementById('result').innerText = 'ERROR: ' + err.message;
+            });
+    }
 
 </script>
 </body>

@@ -7,7 +7,7 @@ import {
     CognitoUserAttribute,
     CognitoUserSession,
     ISignUpResult,
-    ICognitoUserPoolData, CognitoRefreshToken,
+    ICognitoUserPoolData, CognitoRefreshToken, ICognitoUserSessionData,
 } from 'amazon-cognito-identity-js';
 
 import { Subject, Observable, Observer } from 'rxjs';
@@ -55,17 +55,17 @@ export class CognitoService {
         return this.config;
     }
 
-    public getCurrentSession(): Observable<CognitoUserSession> {
-        return this.getSession(this.userPool.getCurrentUser());
+    public getCurrentSession$(): Observable<CognitoUserSession> {
+        return this.getSession$(this.userPool.getCurrentUser());
     }
 
-    public getRefreshToken(): Observable<CognitoRefreshToken> {
-        return this.getCurrentSession().pipe(
+    public getRefreshToken$(): Observable<CognitoRefreshToken> {
+        return this.getCurrentSession$().pipe(
             map((session: CognitoUserSession) => session.getRefreshToken())
         );
     }
 
-    public refreshSession(refreshToken: CognitoRefreshToken) {
+    public refreshSession$(refreshToken: CognitoRefreshToken): Observable<ICognitoUserSessionData> {
         return new Observable((observer: Observer<any>) => {
             const currentUser = this.userPool.getCurrentUser();
             currentUser.refreshSession(refreshToken, (err, session) => {
@@ -78,14 +78,14 @@ export class CognitoService {
         });
     }
 
-    public isAuthenticated(): Observable<boolean> {
-        return this.getCurrentSession().pipe(
+    public isAuthenticated$(): Observable<boolean> {
+        return this.getCurrentSession$().pipe(
             map((session: CognitoUserSession) => session && session.isValid() ? true : false),
             catchError(() => of(false))
         );
     }
 
-    public authenticate(username: string, password: string, mfaCode?: Subject<string>): Observable<AuthenticationState> {
+    public authenticate$(username: string, password: string, mfaCode?: Subject<string> | string): Observable<AuthenticationState> {
         const authenticationDetails = new AuthenticationDetails({
             Username: username,
             Password: password
@@ -94,7 +94,7 @@ export class CognitoService {
 
         return new Observable((observer: Observer<AuthenticationState>) => {
             cognitoUser.authenticateUser(authenticationDetails, {
-                onSuccess: function(session: CognitoUserSession, userConfirmationNecessary?: boolean) {
+                onSuccess: (session: CognitoUserSession, userConfirmationNecessary?: boolean) => {
                     observer.next(new AuthenticationSuccess(session, userConfirmationNecessary));
                 },
                 onFailure: function(err: any) {
@@ -111,25 +111,30 @@ export class CognitoService {
                         observer.next(new NotAuthorized());
                     }
                 },
-                newPasswordRequired: function(userAttributes: any, requiredAttributes: any) {
+                newPasswordRequired: (userAttributes: any, requiredAttributes: any) => {
                     observer.next(new NewPasswordRequired(userAttributes, requiredAttributes));
                 },
                 mfaRequired: function(challengeName: any, challengeParameters: any) {
-                    const sendMFA$ = mfaCode.pipe(
-                        map(code => { cognitoUser.sendMFACode(code, this); })
-                    );
-                    sendMFA$.subscribe(() => {
+                    if (typeof mfaCode === 'string') {
+                        cognitoUser.sendMFACode(mfaCode, this);
                         observer.next(new MFARequired(challengeName, challengeParameters));
-                    }, observer.error);
+                    } else {
+                        const sendMFA$ = mfaCode.pipe(
+                            map(code => { cognitoUser.sendMFACode(code, this); })
+                        );
+                        sendMFA$.subscribe(() => {
+                            observer.next(new MFARequired(challengeName, challengeParameters));
+                        }, observer.error);
+                    }
                 },
-                customChallenge: function(challengeParameters: any) {
+                customChallenge: (challengeParameters: any) => {
                     observer.next(new CustomChallenge(challengeParameters));
                 }
             });
         });
     }
 
-    public forgotPassword(username: string): Observable<ForgotPasswordState> {
+    public forgotPassword$(username: string): Observable<ForgotPasswordState> {
         return new Observable((observer: Observer<ForgotPasswordState>) => {
             this.buildCognitoUser(username).forgotPassword({
                 onSuccess: function(data: any) {
@@ -149,8 +154,8 @@ export class CognitoService {
         });
     }
 
-    public confirmNewPassword(email: string, verificationCode: string, newPassword: string): Observable<any> {
-        return new Observable((observer: Observer<any>) => {
+    public confirmNewPassword$(email: string, verificationCode: string, newPassword: string): Observable<ForgotPasswordState> {
+        return new Observable((observer: Observer<ForgotPasswordState>) => {
             this.buildCognitoUser(email).confirmPassword(verificationCode, newPassword, {
                 onSuccess: () => {
                     observer.next(new ForgotPasswordSuccess('Matched Code'));
@@ -180,7 +185,7 @@ export class CognitoService {
         }
     }
 
-    public register(user: any): Observable<ISignUpResult> {
+    public register$(user: any): Observable<ISignUpResult> {
         const attributeList = [];
         for (const key in user) {
             if (key === 'password') {
@@ -196,39 +201,35 @@ export class CognitoService {
         return signUp(user.email, user.password, attributeList, null);
     }
 
-    public confirmRegistration(username: string, confirmationCode: string): Observable<any> {
+    public confirmRegistration$(username: string, confirmationCode: string): Observable<any> {
         const cognitoUser = this.buildCognitoUser(username);
         const confirmRegistration: Function = bindNodeCallback<any>(cognitoUser.confirmRegistration.bind(cognitoUser));
-        return this.getSession(cognitoUser).pipe(
+        return this.getSession$(cognitoUser).pipe(
             switchMap(() => confirmRegistration(confirmationCode, true)),
-            catchError(err => of(err))
         );
     }
 
-    public resendCode(username: string): Observable<any> {
+    public resendCode$(username: string): Observable<any> {
         const cognitoUser = this.buildCognitoUser(username);
         const resendCodeFunc: Function = bindNodeCallback<any>(cognitoUser.resendConfirmationCode.bind(cognitoUser));
-        return this.getSession(cognitoUser).pipe(
+        return this.getSession$(cognitoUser).pipe(
             switchMap(() => resendCodeFunc()),
-            catchError(err => of(err))
         );
     }
 
-    public newPassword(oldPassword: string, newPassword: string): Observable<any> {
+    public newPassword$(oldPassword: string, newPassword: string): Observable<any> {
         const currentUser = this.userPool.getCurrentUser();
         const changePassword: Function = bindNodeCallback<any>(currentUser.changePassword.bind(currentUser));
-        return this.getSession(currentUser).pipe(
+        return this.getSession$(currentUser).pipe(
             switchMap(() => changePassword(oldPassword, newPassword)),
-            catchError(err => of(err))
         );
     }
 
-    public getUserAttributes(): Observable<CognitoUserAttribute[]> {
+    public getUserAttributes$(): Observable<CognitoUserAttribute[]> {
         const cognitoUser = this.userPool.getCurrentUser();
         const attributesFunc = (user: CognitoUser | null) => () => bindNodeCallback<CognitoUserAttribute[]>(user.getUserAttributes.bind(user))();
-        return this.getSession(cognitoUser).pipe(
+        return this.getSession$(cognitoUser).pipe(
             concatMap(attributesFunc(cognitoUser)),
-            catchError(err => of(err))
         );
     }
 
@@ -240,7 +241,7 @@ export class CognitoService {
         return new CognitoUser(userData);
     }
 
-    private getSession(cognitoUser: CognitoUser): Observable<CognitoUserSession> {
+    private getSession$(cognitoUser: CognitoUser): Observable<CognitoUserSession> {
         // N.B. cognitoUser.getSession return valid session or refresh it
         if (!cognitoUser) {
             return throwError(new Error('No current User'));

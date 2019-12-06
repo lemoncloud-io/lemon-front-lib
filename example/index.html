@@ -3,7 +3,7 @@
     <meta charset="utf-8">
 </head>
 <body>
-<script type="text/javascript" src="../dist/lemon.front.lib.js" charset="utf-8"></script>
+<script type="text/javascript" src="../dist/lemon.front.bundle.js" charset="utf-8"></script>
 <div class="log-form">
     <h2>Login to your account</h2>
     <input type="text" id="email" title="email" placeholder="email" />
@@ -11,6 +11,7 @@
     <button class="btn" onclick="loginToEureka()">Login</button>
     <button class="btn" onclick="register()">Register</button>
     <button class="btn" onclick="logout()">Logout</button>
+    <button class="btn" onclick="getCredentials()">Get Credentials</button>
 </div>
 <div>
     Request
@@ -88,6 +89,13 @@
                 console.error(err);
                 document.getElementById('result').innerText = 'ERROR: ' + err.message;
             });
+    }
+
+    function getCredentials() {
+        lemonFrontCore.getCognitoIdentityCredentials().then(function(res) {
+            console.log(res);
+            document.getElementById('result').innerText = 'sucess to get credentials';
+        })
     }
 
     function isAuthenticated() {

@@ -40,8 +40,8 @@ export class CognitoHttpService {
 
     private refreshSessionAndCredentials$() {
         // https://github.com/aws-amplify/amplify-js/issues/446#issuecomment-375304763 참고
-        return this.cognitoService.getRefreshToken().pipe(
-            switchMap((refreshToken: CognitoRefreshToken) => this.cognitoService.refreshSession(refreshToken)),
+        return this.cognitoService.getRefreshToken$().pipe(
+            switchMap((refreshToken: CognitoRefreshToken) => this.cognitoService.refreshSession$(refreshToken)),
             switchMap((session: any) => this.doRefreshCredentials$(session))
         );
     }

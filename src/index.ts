@@ -1,4 +1,3 @@
-export * from './services/cognito.service';
 export * from './services/core.service';
 
 export * from './types/cognito.interface';

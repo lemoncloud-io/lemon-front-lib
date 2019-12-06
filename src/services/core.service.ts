@@ -71,7 +71,7 @@ export class CoreService {
         return this.cognitoService.logout();
     }
 
-    public register(user: any): Promise<ISignUpResult> { // should include username, password property
+    public register(user: any): Promise<ISignUpResult> { // should include email, password property
         return this.cognitoService.register$(user).toPromise();
     }
 

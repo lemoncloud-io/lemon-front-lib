@@ -29,7 +29,7 @@ export class CoreService {
 
     // AWS Credentials
     public getCognitoIdentityCredentials(): Promise<AWS.CognitoIdentityCredentials> {
-        return this.awsCredsService.getCredentials$().toPromise();
+        return new Promise((resolve, reject) => this.awsCredsService.getCredentials$().subscribe(resolve, reject));
     }
 
     // Cognito Http

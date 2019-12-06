@@ -17,6 +17,7 @@
     <button class="btn" onclick="getUserAttributes()">get user attributes</button>
     <button class="btn" onclick="isAuthenticated()">check isAuthenticated</button>
     <button class="btn" onclick="refreshSession()">get refreshSession</button>
+    <button class="btn" onclick="getAllInquiries()">request API Gateway</button>
     <h4 id="result"></h4>
 </div>
 
@@ -62,6 +63,7 @@
             .then(function(res) {
                 console.log(res);
                 document.getElementById('result').innerText = JSON.stringify(res);
+                return lemonFrontCore.getCognitoIdentityCredentials(); // 로그인 후 Credentials 가져와야함
             })
             .catch(function(err) {
                 console.error(err);
@@ -71,7 +73,7 @@
 
     function logout() {
         lemonFrontCore.logout();
-        isAuthenticated();
+        location.reload();
     }
 
     function getUserAttributes() {
@@ -108,6 +110,19 @@
             .then(function(session) {
                 console.log('session', session);
                 document.getElementById('result').innerText = JSON.stringify(session);
+            })
+            .catch(function(err) {
+                console.error(err);
+                document.getElementById('result').innerText = 'ERROR: ' + err.message;
+            });
+    }
+
+    function getAllInquiries() {
+        var ENDPOINT = 'https://api.eureka.deals';
+        lemonFrontCore.requestWithSign('GET', ENDPOINT, '/hooks/main-items')
+            .then(function(inquiries) {
+                console.log('inquiries', inquiries);
+                document.getElementById('result').innerText = JSON.stringify(inquiries);
             })
             .catch(function(err) {
                 console.error(err);

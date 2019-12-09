@@ -5,7 +5,7 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 module.exports = {
     mode: 'production',
     context: __dirname + '/src',
-    entry: ['@babel/polyfill', './'],
+    entry: ['./'],
     output: {
         path: __dirname + '/dist',
         filename: 'lemon.front.bundle.js',

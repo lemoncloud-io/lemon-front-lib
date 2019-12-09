@@ -1,7 +1,7 @@
 // ref: https://github.com/BrunoLemonnier/aws-cognito-angular-quickstart
 import * as AWS from 'aws-sdk/global';
-import * as CognitoIdentity from 'aws-sdk/clients/cognitoidentity';
-import * as awsService from 'aws-sdk/lib/service';
+import { LoginsMap } from 'aws-sdk/clients/cognitoidentity';
+import { ServiceConfigurationOptions } from 'aws-sdk/lib/service';
 import { CognitoUserSession } from 'amazon-cognito-identity-js';
 
 import { Observable, Observer } from 'rxjs';
@@ -58,7 +58,7 @@ export class AWSCredsService {
     }
 
     private buildCognitoCreds(session: CognitoUserSession) {
-        const logins: CognitoIdentity.LoginsMap = {};
+        const logins: LoginsMap = {};
         logins[this.loginUrl] = session.getIdToken().getJwtToken();
         const params = {
             IdentityPoolId: this.config.identityPoolId, /* required */
@@ -68,7 +68,7 @@ export class AWSCredsService {
         };
         // optionally provide configuration to apply to the underlying service clients
         // if configuration is not provided, then configuration will be pulled from AWS.config
-        const serviceConfigs = <awsService.ServiceConfigurationOptions>{ };
+        const serviceConfigs = <ServiceConfigurationOptions>{ };
         if (this.config.cognito_identity_endpoint) {
             // The endpoint URI to send requests to. The default endpoint is built from the configured region.
             // The endpoint should be a string like 'https://{service}.{region}.amazonaws.com'.

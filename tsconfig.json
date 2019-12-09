@@ -15,7 +15,7 @@
             ]
         },
         "declaration": true,
-        "lib": ["es5", "es2015", "dom", "scripthost"]
+        "lib": ["es5", "es2015", "dom"]
     },
     "include": [
         "src/**/*"

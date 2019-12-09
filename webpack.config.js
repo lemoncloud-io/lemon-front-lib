@@ -1,18 +1,16 @@
 const { CheckerPlugin } = require('awesome-typescript-loader');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
-
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
     mode: 'production',
     context: __dirname + '/src',
-    entry: {
-        Lemon: './',
-    },
+    entry: ['./'],
     output: {
         path: __dirname + '/dist',
-        filename: 'lemon.front.lib.js',
+        filename: 'lemon.front.bundle.js',
         libraryTarget: 'umd',
-        library: ['[name]'], // Lemon
+        library: 'Lemon',
         umdNamedDefine: true,
     },
     resolve: {
@@ -24,8 +22,16 @@ module.exports = {
             {
                 test: /\.tsx?$/,
                 loader: 'awesome-typescript-loader',
+                options: {
+                    useBabel: true,
+                    babelCore: '@babel/core' // needed for Babel v7
+                }
             },
         ],
     },
-    plugins: [new CheckerPlugin(), new UglifyJsPlugin()],
+    plugins: [
+        new CleanWebpackPlugin(),
+        new CheckerPlugin(),
+        new UglifyJsPlugin()
+    ],
 };

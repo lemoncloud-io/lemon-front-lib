@@ -46,9 +46,8 @@ export class AWSCredsService {
                 if (error) {
                     this.cognitoService.logout();
                     reject(error);
-                } else {
-                    resolve(<AWS.CognitoIdentityCredentials> AWS.config.credentials);
                 }
+                resolve(<AWS.CognitoIdentityCredentials> AWS.config.credentials);
             });
         });
     }

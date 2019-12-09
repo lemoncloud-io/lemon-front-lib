@@ -15,7 +15,7 @@ export class CognitoHttpService {
         this.config = this.cognitoService.getConfig();
     }
 
-    public request$(method: string = 'GET', endpoint: string, path: string, params?: any, body?: any): Promise<any> {
+    public request(method: string = 'GET', endpoint: string, path: string, params?: any, body?: any): Promise<any> {
         const queryParams = params || {};
         const bodyReq = body && typeof body === 'object' ? JSON.stringify(body) : body;
         const objParams = { method, path, queryParams, bodyReq };
@@ -29,7 +29,7 @@ export class CognitoHttpService {
             .then((shouldRefresh: boolean) => shouldRefresh ? this.refreshSessionAndCredentials() : new Promise(resolve => resolve(true)))
             .then(() => this.getSignedClient(endpoint))
             .then(signedClient => this.getSignedHeader(signedClient, objParams))
-            .then(header => this.executeRequest$(header, endpoint, objParams));
+            .then(header => this.executeRequest(header, endpoint, objParams));
     }
 
     private refreshSessionAndCredentials() {
@@ -105,7 +105,7 @@ export class CognitoHttpService {
         });
     }
 
-    private executeRequest$(header: any, endpoint: any, objParams: any) {
+    private executeRequest(header: any, endpoint: any, objParams: any) {
         // execute http request.
         const { method, path, queryParams, bodyReq } = objParams;
 
@@ -113,16 +113,16 @@ export class CognitoHttpService {
         const httpClient = new HttpService({ headers });
         switch (method.toUpperCase()) {
             case 'POST':
-                return httpClient.post$(endpoint + path, bodyReq, queryParams);
+                return httpClient.post(endpoint + path, bodyReq, queryParams);
             case 'PUT':
-                return httpClient.put$(endpoint + path, bodyReq, queryParams);
+                return httpClient.put(endpoint + path, bodyReq, queryParams);
             case 'DELETE':
-                return httpClient.delete$(endpoint + path, queryParams);
+                return httpClient.delete(endpoint + path, queryParams);
             case 'PATCH':
-                return httpClient.patch$(endpoint + path, bodyReq, queryParams);
+                return httpClient.patch(endpoint + path, bodyReq, queryParams);
             case 'GET':
             default:
-                return httpClient.get$(endpoint + path, queryParams);
+                return httpClient.get(endpoint + path, queryParams);
         }
     }
 

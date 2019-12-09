@@ -33,7 +33,7 @@ export class CoreService {
 
     // Cognito Http
     public requestWithSign(method: string = 'GET', endpoint: string, path: string, params?: any, body?: any): Promise<any> {
-        return this.cognitoHttpService.request$(method, endpoint, path, params, body);
+        return this.cognitoHttpService.request(method, endpoint, path, params, body);
     }
 
     // Cognito Service

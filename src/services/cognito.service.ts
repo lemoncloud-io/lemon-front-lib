@@ -56,9 +56,7 @@ export class CognitoService {
     }
 
     public getRefreshToken(): Promise<CognitoRefreshToken> {
-        return this.getCurrentSession().then((session: CognitoUserSession) => {
-            return session.getRefreshToken();
-        });
+        return this.getCurrentSession().then((session: CognitoUserSession) => session.getRefreshToken());
     }
 
     public refreshSession(refreshToken: CognitoRefreshToken): Promise<ICognitoUserSessionData> {
@@ -81,18 +79,15 @@ export class CognitoService {
     }
 
     public authenticate(username: string, password: string, mfaCode?: string): Promise<AuthenticationState> {
-        const authenticationDetails = new AuthenticationDetails({
-            Username: username,
-            Password: password
-        });
-        const cognitoUser = this.buildCognitoUser(username);
-
         return new Promise((resolve, reject) => {
+            const authenticationDetails = new AuthenticationDetails({ Username: username, Password: password });
+            const cognitoUser = this.buildCognitoUser(username);
+
             cognitoUser.authenticateUser(authenticationDetails, {
                 onSuccess: (session: CognitoUserSession, userConfirmationNecessary?: boolean) => {
                     resolve(new AuthenticationSuccess(session, userConfirmationNecessary));
                 },
-                onFailure: function(err: any) {
+                onFailure: (err: any) => {
                     const notFoundUser = err.code === 'UserNotFoundException' || err.name === 'UserNotFoundException';
                     const notAuthorized = err.code === 'NotAuthorizedException' || err.name === 'NotAuthorizedException';
                     const unknownError = !notFoundUser && !notAuthorized;
@@ -123,7 +118,7 @@ export class CognitoService {
     public forgotPassword(username: string): Promise<ForgotPasswordState> {
         return new Promise((resolve, reject) => {
             this.buildCognitoUser(username).forgotPassword({
-                onSuccess: function(data: any) {
+                onSuccess: (data: any) => {
                     resolve(new ForgotPasswordSuccess(data));
                 },
                 onFailure: (err: any) => {
@@ -133,7 +128,7 @@ export class CognitoService {
                     }
                     resolve(new ForgotPasswordUserNotFound());
                 },
-                inputVerificationCode: function(data: any) {
+                inputVerificationCode: (data: any) => {
                     resolve(new InputVerificationCode(data));
                 }
             });
@@ -244,7 +239,6 @@ export class CognitoService {
                     if (err) {
                         return reject(err);
                     }
-                    console.log(result)
                     resolve(result);
                 });
             })

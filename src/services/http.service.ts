@@ -8,27 +8,27 @@ export class HttpService {
         this.axiosInstance = axios.create(options);
     }
 
-    public get$<T>(url: string, queryParams?: object) {
-        return this.makeRequest$<T>('GET', url, queryParams);
+    public get<T>(url: string, queryParams?: object) {
+        return this.makeRequest<T>('GET', url, queryParams);
     }
 
-    public post$<T>(url: string, body: object, queryParams?: object) {
-        return this.makeRequest$<T>('POST', url, queryParams, body);
+    public post<T>(url: string, body: object, queryParams?: object) {
+        return this.makeRequest<T>('POST', url, queryParams, body);
     }
 
-    public put$<T>(url: string, body: object, queryParams?: object) {
-        return this.makeRequest$<T>('PUT', url, queryParams, body);
+    public put<T>(url: string, body: object, queryParams?: object) {
+        return this.makeRequest<T>('PUT', url, queryParams, body);
     }
 
-    public patch$<T>(url: string, body: object, queryParams?: object) {
-        return this.makeRequest$<T>('PATCH', url, queryParams, body);
+    public patch<T>(url: string, body: object, queryParams?: object) {
+        return this.makeRequest<T>('PATCH', url, queryParams, body);
     }
 
-    public delete$(url: string, queryParams?: object) {
-        return this.makeRequest$('DELETE', url, queryParams);
+    public delete(url: string, queryParams?: object) {
+        return this.makeRequest('DELETE', url, queryParams);
     }
 
-    private makeRequest$<T>(method: Method, url: string, queryParams?: object, body?: object) {
+    private makeRequest<T>(method: Method, url: string, queryParams?: object, body?: object) {
         let request: AxiosPromise<T>;
 
         switch (method) {
@@ -52,9 +52,8 @@ export class HttpService {
         }
 
         return new Promise((resolve, reject) => {
-            request
-                .then((response: AxiosResponse) => resolve(response.data))
-                .catch((err: Error) => reject(err))
+            request.then((response: AxiosResponse) => resolve(response.data))
+                .catch((err: Error) => reject(err));
         });
     }
 }

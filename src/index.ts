@@ -1,4 +1,6 @@
 // services
+import 'whatwg-fetch';
+
 export * from './services/aws.service';
 export * from './services/cognito-http.service';
 export * from './services/cognito.service';

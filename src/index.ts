@@ -1,6 +1,7 @@
-// services
+// for polyfill on IE11
 import 'whatwg-fetch';
 
+// services
 export * from './services/aws.service';
 export * from './services/cognito-http.service';
 export * from './services/cognito.service';

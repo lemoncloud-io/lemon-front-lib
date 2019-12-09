@@ -46,7 +46,6 @@ export class CoreService {
     }
 
     public refreshSession(token: CognitoRefreshToken): Promise<ICognitoUserSessionData> {
-        // NOTE: new Observable...로 리턴하는 함수의 경우 toPromise()가 안됨
         return this.cognitoService.refreshSession(token);
     }
 

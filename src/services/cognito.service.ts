@@ -10,10 +10,6 @@ import {
     ICognitoUserPoolData, CognitoRefreshToken, ICognitoUserSessionData,
 } from 'amazon-cognito-identity-js';
 
-import { Subject, Observable, Observer } from 'rxjs';
-import { bindNodeCallback, of, throwError } from 'rxjs';
-import { concatMap, map, switchMap, catchError } from 'rxjs/operators';
-
 import { CognitoServiceConfig } from '../types/cognito.interface';
 import {
     AuthenticationState,
@@ -55,117 +51,107 @@ export class CognitoService {
         return this.config;
     }
 
-    public getCurrentSession$(): Observable<CognitoUserSession> {
-        return this.getSession$(this.userPool.getCurrentUser());
+    public getCurrentSession(): Promise<CognitoUserSession> {
+        return this.getSession(this.userPool.getCurrentUser());
     }
 
-    public getRefreshToken$(): Observable<CognitoRefreshToken> {
-        return this.getCurrentSession$().pipe(
-            map((session: CognitoUserSession) => session.getRefreshToken())
-        );
+    public getRefreshToken(): Promise<CognitoRefreshToken> {
+        return this.getCurrentSession().then((session: CognitoUserSession) => {
+            return session.getRefreshToken();
+        });
     }
 
-    public refreshSession$(refreshToken: CognitoRefreshToken): Observable<ICognitoUserSessionData> {
-        return new Observable((observer: Observer<any>) => {
+    public refreshSession(refreshToken: CognitoRefreshToken): Promise<ICognitoUserSessionData> {
+        return new Promise((resolve, reject) => {
             const currentUser = this.userPool.getCurrentUser();
             currentUser.refreshSession(refreshToken, (err, session) => {
                 if (err) {
                     console.log('getRefreshSession Error: ', err);
-                    observer.error(err);
+                    reject(err);
                 }
-                observer.next(session);
+                resolve(session);
             });
         });
     }
 
-    public isAuthenticated$(): Observable<boolean> {
-        return this.getCurrentSession$().pipe(
-            map((session: CognitoUserSession) => session && session.isValid() ? true : false),
-            catchError(() => of(false))
-        );
+    public isAuthenticated(): Promise<boolean> {
+        return this.getCurrentSession()
+            .then((session: CognitoUserSession) => session && session.isValid() ? true : false)
+            .catch(() => false);
     }
 
-    public authenticate$(username: string, password: string, mfaCode?: Subject<string> | string): Observable<AuthenticationState> {
+    public authenticate(username: string, password: string, mfaCode?: string): Promise<AuthenticationState> {
         const authenticationDetails = new AuthenticationDetails({
             Username: username,
             Password: password
         });
         const cognitoUser = this.buildCognitoUser(username);
 
-        return new Observable((observer: Observer<AuthenticationState>) => {
+        return new Promise((resolve, reject) => {
             cognitoUser.authenticateUser(authenticationDetails, {
                 onSuccess: (session: CognitoUserSession, userConfirmationNecessary?: boolean) => {
-                    observer.next(new AuthenticationSuccess(session, userConfirmationNecessary));
+                    resolve(new AuthenticationSuccess(session, userConfirmationNecessary));
                 },
                 onFailure: function(err: any) {
                     const notFoundUser = err.code === 'UserNotFoundException' || err.name === 'UserNotFoundException';
                     const notAuthorized = err.code === 'NotAuthorizedException' || err.name === 'NotAuthorizedException';
                     const unknownError = !notFoundUser && !notAuthorized;
                     if (unknownError) {
-                        observer.error(err);
+                        reject(err);
                     }
                     if (notFoundUser) {
-                        observer.next(new UserNotFound());
+                        resolve(new UserNotFound());
                     }
                     if (notAuthorized) {
-                        observer.next(new NotAuthorized());
+                        resolve(new NotAuthorized());
                     }
                 },
                 newPasswordRequired: (userAttributes: any, requiredAttributes: any) => {
-                    observer.next(new NewPasswordRequired(userAttributes, requiredAttributes));
+                    resolve(new NewPasswordRequired(userAttributes, requiredAttributes));
                 },
                 mfaRequired: function(challengeName: any, challengeParameters: any) {
-                    if (typeof mfaCode === 'string') {
-                        cognitoUser.sendMFACode(mfaCode, this);
-                        observer.next(new MFARequired(challengeName, challengeParameters));
-                    } else {
-                        const sendMFA$ = mfaCode.pipe(
-                            map(code => { cognitoUser.sendMFACode(code, this); })
-                        );
-                        sendMFA$.subscribe(() => {
-                            observer.next(new MFARequired(challengeName, challengeParameters));
-                        }, observer.error);
-                    }
+                    cognitoUser.sendMFACode(mfaCode, this);
+                    resolve(new MFARequired(challengeName, challengeParameters));
                 },
                 customChallenge: (challengeParameters: any) => {
-                    observer.next(new CustomChallenge(challengeParameters));
+                    resolve(new CustomChallenge(challengeParameters));
                 }
             });
         });
     }
 
-    public forgotPassword$(username: string): Observable<ForgotPasswordState> {
-        return new Observable((observer: Observer<ForgotPasswordState>) => {
+    public forgotPassword(username: string): Promise<ForgotPasswordState> {
+        return new Promise((resolve, reject) => {
             this.buildCognitoUser(username).forgotPassword({
                 onSuccess: function(data: any) {
-                    observer.next(new ForgotPasswordSuccess(data));
+                    resolve(new ForgotPasswordSuccess(data));
                 },
                 onFailure: (err: any) => {
                     const unknownError = !(err.code === 'UserNotFoundException' || err.name === 'UserNotFoundException');
                     if (unknownError) {
-                        observer.error(err);
+                        reject(err);
                     }
-                    observer.next(new ForgotPasswordUserNotFound());
+                    resolve(new ForgotPasswordUserNotFound());
                 },
                 inputVerificationCode: function(data: any) {
-                    observer.next(new InputVerificationCode(data));
+                    resolve(new InputVerificationCode(data));
                 }
             });
         });
     }
 
-    public confirmNewPassword$(email: string, verificationCode: string, newPassword: string): Observable<ForgotPasswordState> {
-        return new Observable((observer: Observer<ForgotPasswordState>) => {
+    public confirmNewPassword(email: string, verificationCode: string, newPassword: string): Promise<ForgotPasswordState> {
+        return new Promise((resolve, reject) => {
             this.buildCognitoUser(email).confirmPassword(verificationCode, newPassword, {
                 onSuccess: () => {
-                    observer.next(new ForgotPasswordSuccess('Matched Code'));
+                    resolve(new ForgotPasswordSuccess('Matched Code'));
                 },
                 onFailure: (err: any) => {
                     const unknownError = !(err.code === 'CodeMismatchException' || err.name === 'CodeMismatchException');
                     if (unknownError) {
-                        observer.error(err);
+                        reject(err);
                     }
-                    observer.next(new CodeMismatch());
+                    resolve(new CodeMismatch());
                 },
             });
         });
@@ -185,8 +171,8 @@ export class CognitoService {
         }
     }
 
-    public register$(user: any): Observable<ISignUpResult> {
-        const attributeList = [];
+    public register(user: any): Promise<ISignUpResult> {
+        const attributeList: CognitoUserAttribute[] = [];
         for (const key in user) {
             if (key === 'password') {
                 continue;
@@ -197,40 +183,72 @@ export class CognitoService {
             };
             attributeList.push(new CognitoUserAttribute(userAttribute));
         }
-        const signUp: Function = bindNodeCallback<ISignUpResult>(this.userPool.signUp.bind(this.userPool));
-        return signUp(user.email, user.password, attributeList, null);
+        return new Promise<ISignUpResult>((resolve, reject) => {
+            this.userPool.signUp(user.email, user.password, attributeList, null, (err, result) => {
+                if (err) {
+                    return reject(err);
+                }
+                resolve(result)
+            });
+        })
     }
 
-    public confirmRegistration$(username: string, confirmationCode: string): Observable<any> {
+    public confirmRegistration(username: string, confirmationCode: string): Promise<any> {
         const cognitoUser = this.buildCognitoUser(username);
-        const confirmRegistration: Function = bindNodeCallback<any>(cognitoUser.confirmRegistration.bind(cognitoUser));
-        return this.getSession$(cognitoUser).pipe(
-            switchMap(() => confirmRegistration(confirmationCode, true)),
-        );
+        return this.getSession(cognitoUser)
+            .then(() => {
+                return new Promise((resolve, reject) => {
+                    cognitoUser.confirmRegistration(confirmationCode, true, (err, result) => {
+                        if (err) {
+                            return reject(err);
+                        }
+                        resolve(result);
+                    });
+                });
+            });
     }
 
-    public resendCode$(username: string): Observable<any> {
+    public resendCode(username: string): Promise<any> {
         const cognitoUser = this.buildCognitoUser(username);
-        const resendCodeFunc: Function = bindNodeCallback<any>(cognitoUser.resendConfirmationCode.bind(cognitoUser));
-        return this.getSession$(cognitoUser).pipe(
-            switchMap(() => resendCodeFunc()),
-        );
+        return this.getSession(cognitoUser).then(() => {
+            return new Promise((resolve, reject) => {
+                cognitoUser.resendConfirmationCode((err, result) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(result);
+                });
+            });
+        });
     }
 
-    public newPassword$(oldPassword: string, newPassword: string): Observable<any> {
+    public newPassword(oldPassword: string, newPassword: string): Promise<any> {
         const currentUser = this.userPool.getCurrentUser();
-        const changePassword: Function = bindNodeCallback<any>(currentUser.changePassword.bind(currentUser));
-        return this.getSession$(currentUser).pipe(
-            switchMap(() => changePassword(oldPassword, newPassword)),
-        );
+        return this.getSession(currentUser).then(() => {
+            return new Promise((resolve, reject) => {
+                currentUser.changePassword(oldPassword, newPassword, (err, result) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(result);
+                });
+            });
+        });
     }
 
-    public getUserAttributes$(): Observable<CognitoUserAttribute[]> {
+    public getUserAttributes(): Promise<CognitoUserAttribute[] | void> {
         const cognitoUser = this.userPool.getCurrentUser();
-        const attributesFunc = (user: CognitoUser | null) => () => bindNodeCallback<CognitoUserAttribute[]>(user.getUserAttributes.bind(user))();
-        return this.getSession$(cognitoUser).pipe(
-            concatMap(attributesFunc(cognitoUser)),
-        );
+        return this.getSession(cognitoUser).then(() => {
+            return new Promise((resolve, reject) => {
+                cognitoUser.getUserAttributes((err, result) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    console.log(result)
+                    resolve(result);
+                });
+            })
+        });
     }
 
     private buildCognitoUser(username: string): CognitoUser {
@@ -241,12 +259,18 @@ export class CognitoService {
         return new CognitoUser(userData);
     }
 
-    private getSession$(cognitoUser: CognitoUser): Observable<CognitoUserSession> {
-        // N.B. cognitoUser.getSession return valid session or refresh it
-        if (!cognitoUser) {
-            return throwError(new Error('No current User'));
-        }
-        const sessionFunc: Function = bindNodeCallback<CognitoUserSession>(cognitoUser.getSession.bind(cognitoUser));
-        return sessionFunc();
+    private getSession(cognitoUser: CognitoUser): Promise<CognitoUserSession> {
+        return new Promise((resolve, reject) => {
+            // N.B. cognitoUser.getSession return valid session or refresh it
+            if (!cognitoUser) {
+                return reject(new Error('No current User'));
+            }
+            cognitoUser.getSession((err: any, result: CognitoUserSession) => {
+                if (err) {
+                    return reject(err);
+                }
+                resolve(result);
+            })
+        });
     }
 }

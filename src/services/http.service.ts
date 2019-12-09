@@ -1,5 +1,4 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosPromise, Method, AxiosResponse } from 'axios';
-import { Observable } from 'rxjs/internal/Observable';
 
 export class HttpService {
 
@@ -52,14 +51,10 @@ export class HttpService {
                 throw new Error('Method not supported');
         }
 
-        return new Observable<T>(subscriber => {
-            request.then((response: AxiosResponse) => {
-                subscriber.next(response.data);
-                subscriber.complete();
-            }).catch((err: Error) => {
-                subscriber.error(err);
-                subscriber.complete();
-            });
+        return new Promise((resolve, reject) => {
+            request
+                .then((response: AxiosResponse) => resolve(response.data))
+                .catch((err: Error) => reject(err))
         });
     }
 }

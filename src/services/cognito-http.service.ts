@@ -1,9 +1,6 @@
 import * as AWS from 'aws-sdk/global';
 import { CognitoRefreshToken } from 'amazon-cognito-identity-js';
 
-import { Observable, Observer, of } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
-
 import sigV4Client from './sig-v4.service';
 import { HttpService } from './http.service';
 import { CognitoService } from './cognito.service';
@@ -18,7 +15,7 @@ export class CognitoHttpService {
         this.config = this.cognitoService.getConfig();
     }
 
-    public request$(method: string = 'GET', endpoint: string, path: string, params?: any, body?: any): Observable<any> {
+    public request$(method: string = 'GET', endpoint: string, path: string, params?: any, body?: any): Promise<any> {
         const queryParams = params || {};
         const bodyReq = body && typeof body === 'object' ? JSON.stringify(body) : body;
         const objParams = { method, path, queryParams, bodyReq };
@@ -28,26 +25,22 @@ export class CognitoHttpService {
             : false;
 
         // observable chain for request with signed header
-        return of(needsRefresh).pipe(
-            // refresh session and credentials
-            switchMap(shouldRefresh => shouldRefresh ? this.refreshSessionAndCredentials$() : of(true)),
-            // prepare signed header
-            switchMap(() => this.getSignedClient$(endpoint)),
-            switchMap(signedClient => this.getSignedHeader$(signedClient, objParams)),
-            switchMap(header => this.executeRequest$(header, endpoint, objParams))
-        );
+        return new Promise((resolve) => resolve(needsRefresh))
+            .then((shouldRefresh: boolean) => shouldRefresh ? this.refreshSessionAndCredentials() : new Promise(resolve => resolve(true)))
+            .then(() => this.getSignedClient(endpoint))
+            .then(signedClient => this.getSignedHeader(signedClient, objParams))
+            .then(header => this.executeRequest$(header, endpoint, objParams));
     }
 
-    private refreshSessionAndCredentials$() {
+    private refreshSessionAndCredentials() {
         // https://github.com/aws-amplify/amplify-js/issues/446#issuecomment-375304763 참고
-        return this.cognitoService.getRefreshToken$().pipe(
-            switchMap((refreshToken: CognitoRefreshToken) => this.cognitoService.refreshSession$(refreshToken)),
-            switchMap((session: any) => this.doRefreshCredentials$(session))
-        );
+        return this.cognitoService.getRefreshToken()
+            .then((refreshToken: CognitoRefreshToken) => this.cognitoService.refreshSession(refreshToken))
+            .then((session: any) => this.doRefreshCredentials(session));
     }
 
-    private doRefreshCredentials$(newSession: any) {
-        return new Observable((observer: Observer<boolean>) => {
+    private doRefreshCredentials(newSession: any) {
+        return new Promise((resolve, reject) => {
             const { region, userPoolId } = this.config;
             const loginUrl = `cognito-idp.${region.toLowerCase()}.amazonaws.com/${userPoolId}`;
             const globalAWSCredentials: any = <AWS.Credentials>AWS.config.credentials;
@@ -56,56 +49,60 @@ export class CognitoHttpService {
             globalAWSCredentials.refresh((err: any) => {
                 if (err) {
                     console.log('doRefreshCredentials error', err);
-                    observer.error(err);
+                    reject(err);
                 } else {
                     console.log('TOKEN SUCCESSFULLY UPDATED');
-                    observer.next(true);
+                    resolve(true);
                 }
             });
         });
     }
 
-    private getSignedClient$(endpoint: string) {
-        // prepare client
-        const ok = AWS.config && AWS.config.credentials;
-        const signedClient = ok && sigV4Client.newClient({
-            accessKey: AWS.config.credentials.accessKeyId,
-            secretKey: AWS.config.credentials.secretAccessKey,
-            sessionToken: AWS.config.credentials.sessionToken,
-            region: 'ap-northeast-2',
-            endpoint: endpoint,
-            host: this.extractHostname(endpoint)
-        });
+    private getSignedClient(endpoint: string): Promise<any> {
+        return new Promise((resolve) => {
+            // prepare client
+            const ok = AWS.config && AWS.config.credentials;
+            const signedClient = ok && sigV4Client.newClient({
+                accessKey: AWS.config.credentials.accessKeyId,
+                secretKey: AWS.config.credentials.secretAccessKey,
+                sessionToken: AWS.config.credentials.sessionToken,
+                region: 'ap-northeast-2',
+                endpoint: endpoint,
+                host: this.extractHostname(endpoint)
+            });
 
-        const isError = (signedClient === null || signedClient === undefined);
-        if (isError) {
-            console.log('Warning: signedClient is missing -> request without header');
-        }
-        return of(signedClient);
+            const isError = (signedClient === null || signedClient === undefined);
+            if (isError) {
+                console.log('Warning: signedClient is missing -> request without header');
+            }
+            resolve(signedClient);
+        });
     }
 
-    private getSignedHeader$(signedClient: any, params: any) {
-        if (!signedClient) {
-            return of(null);
-        }
+    private getSignedHeader(signedClient: any, params: any): Promise<any> {
+        return new Promise((resolve) => {
+            if (!signedClient) {
+                return resolve(null);
+            }
 
-        const { method, path, queryParams, bodyReq } = params;
-        // check signRequest instance.
-        const signedRequest = signedClient.signRequest({
-            method: method,
-            path: path,
-            headers: {},
-            queryParams: queryParams,
-            body: bodyReq
+            const { method, path, queryParams, bodyReq } = params;
+            // check signRequest instance.
+            const signedRequest = signedClient.signRequest({
+                method: method,
+                path: path,
+                headers: {},
+                queryParams: queryParams,
+                body: bodyReq
+            });
+            const header = signedRequest && signedRequest.headers;
+
+            const isError = (header === null || header === undefined);
+            if (isError) {
+                console.log('Warning: headers is missing');
+                return resolve(null);
+            }
+            return resolve(header);
         });
-        const header = signedRequest && signedRequest.headers;
-
-        const isError = (header === null || header === undefined);
-        if (isError) {
-            console.log('Warning: headers is missing');
-            return of(null);
-        }
-        return of(header);
     }
 
     private executeRequest$(header: any, endpoint: any, objParams: any) {

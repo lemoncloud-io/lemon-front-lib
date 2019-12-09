@@ -1,11 +1,10 @@
-const { CheckerPlugin } = require('awesome-typescript-loader');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
     mode: 'production',
     context: __dirname + '/src',
-    entry: ['./'],
+    entry: ['./', 'babel-polyfill'],
     output: {
         path: __dirname + '/dist',
         filename: 'lemon.front.bundle.js',
@@ -18,20 +17,25 @@ module.exports = {
     },
     devtool: 'source-map',
     module: {
-        rules: [
-            {
-                test: /\.tsx?$/,
-                loader: 'awesome-typescript-loader',
-                options: {
-                    useBabel: true,
-                    babelCore: '@babel/core' // needed for Babel v7
+        rules: [{
+            test: /\.ts?$/,
+            exclude: /node_modules/,
+            use: [
+                {
+                    loader: 'babel-loader',
+                    query: {
+                        presets: ['@babel/env']
+                    }
+                },
+                {
+                    loader: 'ts-loader'
                 }
-            },
-        ],
+
+            ]
+        }]
     },
     plugins: [
         new CleanWebpackPlugin(),
-        new CheckerPlugin(),
         new UglifyJsPlugin()
     ],
 };

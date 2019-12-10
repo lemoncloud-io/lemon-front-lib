@@ -15,12 +15,14 @@ export class CognitoHttpService {
         this.config = this.cognitoService.getConfig();
     }
 
-    public request(method: string = 'GET', endpoint: string, path: string, params?: any, body?: any): Promise<any> {
-        const queryParams = params || {};
+    public request(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
+        const queryParams = { ...params };
         const bodyReq = body && typeof body === 'object' ? JSON.stringify(body) : body;
         const objParams = { method, path, queryParams, bodyReq };
-        const hasNeedsRefresh = AWS.config.credentials && 'needsRefresh' in AWS.config.credentials;
-        const needsRefresh = hasNeedsRefresh
+
+        // check should refresh session
+        const hasNeedsRefreshProperty = AWS.config.credentials && 'needsRefresh' in AWS.config.credentials;
+        const needsRefresh = hasNeedsRefreshProperty
             ? (<AWS.Credentials> AWS.config.credentials).needsRefresh()
             : false;
 
@@ -50,10 +52,9 @@ export class CognitoHttpService {
                 if (err) {
                     console.log('doRefreshCredentials error', err);
                     reject(err);
-                } else {
-                    console.log('TOKEN SUCCESSFULLY UPDATED');
-                    resolve(true);
                 }
+                console.log('TOKEN SUCCESSFULLY UPDATED');
+                resolve(true);
             });
         });
     }
@@ -71,8 +72,8 @@ export class CognitoHttpService {
                 host: this.extractHostname(endpoint)
             });
 
-            const isError = (signedClient === null || signedClient === undefined);
-            if (isError) {
+            const isNoSignedClient = (signedClient === null || signedClient === undefined);
+            if (isNoSignedClient) {
                 console.log('Warning: signedClient is missing -> request without header');
             }
             resolve(signedClient);
@@ -96,8 +97,8 @@ export class CognitoHttpService {
             });
             const header = signedRequest && signedRequest.headers;
 
-            const isError = (header === null || header === undefined);
-            if (isError) {
+            const isNoHeader = (header === null || header === undefined);
+            if (isNoHeader) {
                 console.log('Warning: headers is missing');
                 return resolve(null);
             }

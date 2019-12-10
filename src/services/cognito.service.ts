@@ -64,7 +64,7 @@ export class CognitoService {
             const currentUser = this.userPool.getCurrentUser();
             currentUser.refreshSession(refreshToken, (err, session) => {
                 if (err) {
-                    console.log('getRefreshSession Error: ', err);
+                    console.error('getRefreshSession Error: ', err);
                     reject(err);
                 }
                 resolve(session);
@@ -92,6 +92,7 @@ export class CognitoService {
                     const notAuthorized = err.code === 'NotAuthorizedException' || err.name === 'NotAuthorizedException';
                     const unknownError = !notFoundUser && !notAuthorized;
                     if (unknownError) {
+                        console.error('authenticate error: ', err);
                         reject(err);
                     }
                     if (notFoundUser) {
@@ -124,6 +125,7 @@ export class CognitoService {
                 onFailure: (err: any) => {
                     const unknownError = !(err.code === 'UserNotFoundException' || err.name === 'UserNotFoundException');
                     if (unknownError) {
+                        console.error('forgotPassword error: ', err);
                         reject(err);
                     }
                     resolve(new ForgotPasswordUserNotFound());
@@ -144,6 +146,7 @@ export class CognitoService {
                 onFailure: (err: any) => {
                     const unknownError = !(err.code === 'CodeMismatchException' || err.name === 'CodeMismatchException');
                     if (unknownError) {
+                        console.error('confirmNewPassword error: ', err);
                         reject(err);
                     }
                     resolve(new CodeMismatch());
@@ -181,6 +184,7 @@ export class CognitoService {
         return new Promise<ISignUpResult>((resolve, reject) => {
             this.userPool.signUp(user.email, user.password, attributeList, null, (err, result) => {
                 if (err) {
+                    console.error('register error: ', err);
                     return reject(err);
                 }
                 resolve(result)
@@ -195,6 +199,7 @@ export class CognitoService {
                 return new Promise((resolve, reject) => {
                     cognitoUser.confirmRegistration(confirmationCode, true, (err, result) => {
                         if (err) {
+                            console.error('confirmRegistration error: ', err);
                             return reject(err);
                         }
                         resolve(result);
@@ -203,12 +208,13 @@ export class CognitoService {
             });
     }
 
-    public resendCode(username: string): Promise<any> {
+    public resendCode(username: string): Promise<'SUCCESS'> {
         const cognitoUser = this.buildCognitoUser(username);
         return this.getSession(cognitoUser).then(() => {
             return new Promise((resolve, reject) => {
                 cognitoUser.resendConfirmationCode((err, result) => {
                     if (err) {
+                        console.error('resendCode error: ', err);
                         return reject(err);
                     }
                     resolve(result);
@@ -217,12 +223,13 @@ export class CognitoService {
         });
     }
 
-    public newPassword(oldPassword: string, newPassword: string): Promise<any> {
+    public newPassword(oldPassword: string, newPassword: string): Promise<'SUCCESS'> {
         const currentUser = this.userPool.getCurrentUser();
         return this.getSession(currentUser).then(() => {
             return new Promise((resolve, reject) => {
-                currentUser.changePassword(oldPassword, newPassword, (err, result) => {
+                currentUser.changePassword(oldPassword, newPassword, (err, result: 'SUCCESS') => {
                     if (err) {
+                        console.error('newPassword error: ', err);
                         return reject(err);
                     }
                     resolve(result);
@@ -237,6 +244,7 @@ export class CognitoService {
             return new Promise((resolve, reject) => {
                 cognitoUser.getUserAttributes((err, result) => {
                     if (err) {
+                        console.error('getUserAttributes error: ', err);
                         return reject(err);
                     }
                     resolve(result);
@@ -261,6 +269,7 @@ export class CognitoService {
             }
             cognitoUser.getSession((err: any, result: CognitoUserSession) => {
                 if (err) {
+                    console.error('getSession error: ', err);
                     return reject(err);
                 }
                 resolve(result);

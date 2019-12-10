@@ -28,15 +28,14 @@ export class AWSCredsService {
      * This will not attempt to reload credentials when they are already loaded into the AWS.config.credentials object.
      */
     public getCredentials(): Promise<AWS.CognitoIdentityCredentials> {
-        if (AWS.config.credentials == null || (<AWS.Credentials> AWS.config.credentials).needsRefresh()) {
-            return this.cognitoService.getCurrentSession()
-                .then((session: CognitoUserSession) => {
-                    AWS.config.credentials = this.buildCognitoCreds(session);
-                    return this.getFreshCredentials();
-                });
-        } else {
-            return this.getFreshCredentials();
+        const shouldRefresh = AWS.config.credentials === null || (<AWS.Credentials> AWS.config.credentials).needsRefresh();
+        if (shouldRefresh) {
+            return this.cognitoService.getCurrentSession().then((session: CognitoUserSession) => {
+                AWS.config.credentials = this.buildCognitoCreds(session);
+                return this.getFreshCredentials();
+            });
         }
+        return this.getFreshCredentials();
     }
 
     // Gets the existing credentials, refreshing them if they are not yet loaded or have expired.

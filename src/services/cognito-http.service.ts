@@ -1,5 +1,5 @@
 import * as AWS from 'aws-sdk/global';
-import { CognitoRefreshToken } from 'amazon-cognito-identity-js';
+import { CognitoRefreshToken, ICognitoUserSessionData } from 'amazon-cognito-identity-js';
 
 import sigV4Client from './sig-v4.service';
 import { HttpService } from './http.service';
@@ -36,7 +36,7 @@ export class CognitoHttpService {
         // https://github.com/aws-amplify/amplify-js/issues/446#issuecomment-375304763 참고
         return this.cognitoService.getRefreshToken()
             .then((refreshToken: CognitoRefreshToken) => this.cognitoService.refreshSession(refreshToken))
-            .then((session: any) => this.doRefreshCredentials(session));
+            .then((session: ICognitoUserSessionData) => this.doRefreshCredentials(session));
     }
 
     private doRefreshCredentials(newSession: any) {

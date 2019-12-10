@@ -1,11 +1,11 @@
 const { CheckerPlugin } = require('awesome-typescript-loader');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
     mode: 'production',
     context: __dirname + '/src',
-    entry: ['./'],
+    entry: ['@babel/polyfill', './'],
     output: {
         path: __dirname + '/dist',
         filename: 'lemon.front.bundle.js',

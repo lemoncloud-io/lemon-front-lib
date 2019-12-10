@@ -53,8 +53,7 @@
                 document.getElementById('result').innerText = JSON.stringify(res);
             })
             .catch(function(err) {
-                console.error(err);
-                document.getElementById('result').innerText = 'ERROR: ' + err.message;
+                setErrorMessage(err);
             });
     }
 
@@ -68,8 +67,7 @@
                 return lemonFrontCore.getCognitoIdentityCredentials(); // 로그인 후 Credentials 가져와야함
             })
             .catch(function(err) {
-                console.error(err);
-                document.getElementById('result').innerText = 'ERROR: ' + err.message;
+                setErrorMessage(err);
             });
     }
 
@@ -86,16 +84,19 @@
                 document.getElementById('result').innerText = JSON.stringify(obj);
             })
             .catch(function(err) {
-                console.error(err);
-                document.getElementById('result').innerText = 'ERROR: ' + err.message;
+                setErrorMessage(err);
             });
     }
 
     function getCredentials() {
-        lemonFrontCore.getCognitoIdentityCredentials().then(function(res) {
-            console.log(res);
-            document.getElementById('result').innerText = 'sucess to get credentials';
-        })
+        lemonFrontCore.getCognitoIdentityCredentials()
+            .then(function(res) {
+                console.log(res);
+                document.getElementById('result').innerText = 'success to get credentials';
+            })
+            .catch(function(err) {
+                setErrorMessage(err);
+            });
     }
 
     function isAuthenticated() {
@@ -105,8 +106,7 @@
                 document.getElementById('result').innerText = res;
             })
             .catch(function(err) {
-                console.error(err);
-                document.getElementById('result').innerText = 'ERROR: ' + err.message;
+                setErrorMessage(err);
             });
     }
 
@@ -121,8 +121,7 @@
                 document.getElementById('result').innerText = JSON.stringify(session);
             })
             .catch(function(err) {
-                console.error(err);
-                document.getElementById('result').innerText = 'ERROR: ' + err.message;
+                setErrorMessage(err);
             });
     }
 
@@ -134,8 +133,7 @@
                 document.getElementById('result').innerText = JSON.stringify(items);
             })
             .catch(function(err) {
-                console.error(err);
-                document.getElementById('result').innerText = 'ERROR: ' + err.message;
+                setErrorMessage(err);
             });
     }
 
@@ -147,9 +145,13 @@
                 document.getElementById('result').innerText = JSON.stringify(mock);
             })
             .catch(function(err) {
-                console.error(err);
-                document.getElementById('result').innerText = 'ERROR: ' + err.message;
+                setErrorMessage(err);
             });
+    }
+
+    function setErrorMessage(err) {
+        console.error(err);
+        document.getElementById('result').innerText = 'ERROR: ' + err.message;
     }
 
 </script>

@@ -4,9 +4,6 @@ import { LoginsMap } from 'aws-sdk/clients/cognitoidentity';
 import { ServiceConfigurationOptions } from 'aws-sdk/lib/service';
 import { CognitoUserSession } from 'amazon-cognito-identity-js';
 
-import { Observable, Observer } from 'rxjs';
-import { concatMap } from 'rxjs/operators';
-
 import { CognitoService } from './cognito.service';
 import { CognitoServiceConfig } from '../types/cognito.interface';
 
@@ -30,29 +27,27 @@ export class AWSCredsService {
      * Gets the existing credentials, refreshing them if they are not yet loaded or have expired.
      * This will not attempt to reload credentials when they are already loaded into the AWS.config.credentials object.
      */
-    public getCredentials$(): Observable<AWS.CognitoIdentityCredentials> {
+    public getCredentials(): Promise<AWS.CognitoIdentityCredentials> {
         if (AWS.config.credentials == null || (<AWS.Credentials> AWS.config.credentials).needsRefresh()) {
-            return this.cognitoService.getCurrentSession$().pipe(
-                concatMap((session: CognitoUserSession) => {
+            return this.cognitoService.getCurrentSession()
+                .then((session: CognitoUserSession) => {
                     AWS.config.credentials = this.buildCognitoCreds(session);
-                    return this.getFreshCredentials$();
-                })
-            );
+                    return this.getFreshCredentials();
+                });
         } else {
-            return this.getFreshCredentials$();
+            return this.getFreshCredentials();
         }
     }
 
     // Gets the existing credentials, refreshing them if they are not yet loaded or have expired.
-    private getFreshCredentials$(): Observable<AWS.CognitoIdentityCredentials> {
-        return new Observable((observer: Observer<AWS.CognitoIdentityCredentials>) => {
+    private getFreshCredentials(): Promise<AWS.CognitoIdentityCredentials> {
+        return new Promise((resolve, reject) => {
             (<AWS.Credentials> AWS.config.credentials).get((error) => {
                 if (error) {
                     this.cognitoService.logout();
-                    observer.error(error);
-                } else {
-                    observer.next(<AWS.CognitoIdentityCredentials> AWS.config.credentials);
+                    reject(error);
                 }
+                resolve(<AWS.CognitoIdentityCredentials> AWS.config.credentials);
             });
         });
     }

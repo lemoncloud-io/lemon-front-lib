@@ -95,11 +95,7 @@ export class SocialAuthService {
     public getCredentials(): Promise<AWS.Credentials> {
         const shouldRefresh = AWS.config.credentials === null || (<AWS.Credentials> AWS.config.credentials).needsRefresh();
         if (shouldRefresh) {
-            return this.credentials.refreshPromise()
-                .then(() => {
-                    AWS.config.credentials = this.credentials;
-                    return this.getFreshCredentials();
-                });
+            return this.credentials.refreshPromise().then(() => this.getFreshCredentials());
         }
         return this.getFreshCredentials();
     }

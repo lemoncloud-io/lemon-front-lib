@@ -13,17 +13,29 @@ import { AWSCredsService } from './aws.service';
 import { CognitoServiceConfig } from '../types/cognito.interface';
 import { AuthenticationState } from '../types/authentication-state.type';
 import { ForgotPasswordState } from '../types/forgot-password-state.type';
+import { SocialAuthService } from './social-auth.service';
 
+// TOOD: 문서화작업 or 주석 추가
 export class CoreService {
 
     private readonly cognitoService: CognitoService;
     private readonly cognitoHttpService: CognitoHttpService;
     private readonly awsCredsService: AWSCredsService;
+    private socialAuthService: SocialAuthService;
+
+    private isSocialLogin = false;
 
     constructor(config: CognitoServiceConfig) {
         this.cognitoService = new CognitoService(config);
         this.cognitoHttpService = new CognitoHttpService(this.cognitoService);
         this.awsCredsService = new AWSCredsService(this.cognitoService);
+    }
+
+    // Social Authentication Service
+    public getCredentialsBySocialLogin(accessKeyId: string, secretKey: string, sessionToken?: string): Promise<AWS.Credentials> {
+        this.socialAuthService = new SocialAuthService(accessKeyId, secretKey, sessionToken);
+        this.isSocialLogin = true;
+        return this.socialAuthService.getCredentials();
     }
 
     // AWS Credentials
@@ -33,6 +45,9 @@ export class CoreService {
 
     // Cognito Http
     public requestWithSign(method: string = 'GET', endpoint: string, path: string, params?: any, body?: any): Promise<any> {
+        if (this.isSocialLogin) {
+            return this.socialAuthService.request(method, endpoint, path, params, body);
+        }
         return this.cognitoHttpService.request(method, endpoint, path, params, body);
     }
 

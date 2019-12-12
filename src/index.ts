@@ -8,6 +8,7 @@ export * from './services/cognito.service';
 export * from './services/http.service';
 export * from './services/sig-v4.service';
 export * from './services/core.service';
+export * from './services/social-auth.service';
 
 // types
 export * from './types/cognito.interface';

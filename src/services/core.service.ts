@@ -21,8 +21,7 @@ export class CoreService {
     private readonly cognitoService: CognitoService;
     private readonly cognitoHttpService: CognitoHttpService;
     private readonly awsCredsService: AWSCredsService;
-    private socialAuthService: SocialAuthService;
-
+    private socialAuthService: SocialAuthService | null = null;
     private isSocialLogin = false;
 
     constructor(config: CognitoServiceConfig) {
@@ -45,7 +44,7 @@ export class CoreService {
 
     // Cognito Http
     public requestWithSign(method: string = 'GET', endpoint: string, path: string, params?: any, body?: any): Promise<any> {
-        if (this.isSocialLogin) {
+        if (this.isSocialLogin || this.socialAuthService !== null) {
             return this.socialAuthService.request(method, endpoint, path, params, body);
         }
         return this.cognitoHttpService.request(method, endpoint, path, params, body);
@@ -69,6 +68,7 @@ export class CoreService {
     }
 
     public authenticate(username: string, password: string, mfaCode?: string): Promise<AuthenticationState> {
+        this.isSocialLogin = false;
         return this.cognitoService.authenticate(username, password, mfaCode);
     }
 

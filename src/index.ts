@@ -2,5 +2,6 @@
 import 'whatwg-fetch';
 
 export * from './helper';
-export * from './user-pool';
+export * from './cognito';
 export * from './identity';
+export * from './core';

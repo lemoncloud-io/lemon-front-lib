@@ -1,2 +1,1 @@
-export * from './services/identity.service';
-export * from './services/identity-http.service';
+export * from './identity.service';

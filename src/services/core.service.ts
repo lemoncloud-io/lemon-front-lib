@@ -29,16 +29,15 @@ export class CoreService {
         this.awsCredsService = new AWSCredsService(this.cognitoService);
     }
 
-    // TODO
-    private checkIsSocialLogin() {
-        return false;
-    }
+    public setCredentialsByToken
 
+    // NOTE: 앱 실행될 때마다 아래 함수 호출
     public getCredentialsBySocialLogin(accessKeyId: string, secretKey: string, sessionToken?: string): Promise<AWS.Credentials> {
         this.socialAuthService = new SocialAuthService(accessKeyId, secretKey, sessionToken);
         return this.socialAuthService.getCredentials();
     }
 
+    // NOTE: 앱 실행될 때마다 아래 함수 호출
     public getCognitoIdentityCredentials(): Promise<AWS.CognitoIdentityCredentials> {
         return this.awsCredsService.getCredentials();
     }
@@ -64,7 +63,7 @@ export class CoreService {
 
     public isAuthenticated(): Promise<boolean> {
         if (this.checkIsSocialLogin()) {
-            return false; //TODO:
+            return this.socialAuthService.isAuthenticated();
         }
         return this.cognitoService.isAuthenticated();
     }
@@ -106,5 +105,13 @@ export class CoreService {
 
     public getUserAttributes(): Promise<CognitoUserAttribute[] | void> {
         return this.cognitoService.getUserAttributes();
+    }
+
+    // TODO: 소셜 로그인인지 체크하는 로직 개선
+    private checkIsSocialLogin(): boolean {
+        if (this.socialAuthService === null) {
+            return false;
+        }
+        return true;
     }
 }

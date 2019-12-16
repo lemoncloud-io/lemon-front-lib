@@ -14,7 +14,7 @@ export class SocialAuthService {
     }
 
     public getCredentials(): Promise<AWS.Credentials> {
-        const shouldRefresh = AWS.config.credentials === null || (<AWS.Credentials> AWS.config.credentials).needsRefresh();
+        const shouldRefresh = (<AWS.Credentials> AWS.config.credentials).needsRefresh();
         if (shouldRefresh) {
             return this.credentials.refreshPromise().then(() => this.getFreshCredentials());
         }
@@ -34,6 +34,15 @@ export class SocialAuthService {
 
     public logout(): void {
         AWS.config.credentials = null;
+    }
+
+    public isAuthenticated(): Promise<boolean> {
+        return new Promise((resolve) => {
+            (<AWS.Credentials> AWS.config.credentials).get((error) => {
+                const isAuthenticated = error ? false : true;
+                resolve(isAuthenticated);
+            });
+        });
     }
 
     private getFreshCredentials(): Promise<AWS.Credentials> {

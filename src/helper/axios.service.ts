@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosPromise, Method, AxiosResponse } from 'axios';
 
-export class HttpService {
+export class AxiosService {
 
     private axiosInstance: AxiosInstance;
 

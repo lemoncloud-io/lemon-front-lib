@@ -13,6 +13,14 @@ export class SocialAuthService {
         AWS.config.credentials = this.credentials;
     }
 
+    public getCredentials(): Promise<AWS.Credentials> {
+        const shouldRefresh = AWS.config.credentials === null || (<AWS.Credentials> AWS.config.credentials).needsRefresh();
+        if (shouldRefresh) {
+            return this.credentials.refreshPromise().then(() => this.getFreshCredentials());
+        }
+        return this.getFreshCredentials();
+    }
+
     public request(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
         const queryParams = { ...params };
         const bodyReq = body && typeof body === 'object' ? JSON.stringify(body) : body;
@@ -22,6 +30,21 @@ export class SocialAuthService {
             .then(() => this.getSignedClient(endpoint))
             .then(signedClient => this.getSignedHeader(signedClient, objParams))
             .then(header => this.executeRequest(header, endpoint, objParams));
+    }
+
+    public logout(): void {
+        AWS.config.credentials = null;
+    }
+
+    private getFreshCredentials(): Promise<AWS.Credentials> {
+        return new Promise((resolve, reject) => {
+            (<AWS.Credentials> AWS.config.credentials).get((error) => {
+                if (error) {
+                    reject(error);
+                }
+                resolve(<AWS.Credentials> AWS.config.credentials);
+            });
+        });
     }
 
     private getSignedClient(endpoint: string): Promise<any> {
@@ -39,7 +62,7 @@ export class SocialAuthService {
 
             const isNoSignedClient = (signedClient === null || signedClient === undefined);
             if (isNoSignedClient) {
-                console.log('Warning: signedClient is missing -> request without header');
+                console.log('Warning: signedClient is missing => request without header');
             }
             resolve(signedClient);
         });
@@ -92,30 +115,11 @@ export class SocialAuthService {
         }
     }
 
-    public getCredentials(): Promise<AWS.Credentials> {
-        const shouldRefresh = AWS.config.credentials === null || (<AWS.Credentials> AWS.config.credentials).needsRefresh();
-        if (shouldRefresh) {
-            return this.credentials.refreshPromise().then(() => this.getFreshCredentials());
-        }
-        return this.getFreshCredentials();
-    }
-
-    private getFreshCredentials(): Promise<AWS.Credentials> {
-        return new Promise((resolve, reject) => {
-            (<AWS.Credentials> AWS.config.credentials).get((error) => {
-                if (error) {
-                    reject(error);
-                }
-                resolve(<AWS.Credentials> AWS.config.credentials);
-            });
-        });
-    }
-
     // refer: https://stackoverflow.com/a/23945027/5268806
     private extractHostname(url: string) {
         let hostname;
         //find & remove protocol (http, ftp, etc.) and get hostname
-        if (url.indexOf("//") > -1) {
+        if (url.indexOf('//') > -1) {
             hostname = url.split('/')[2];
         } else {
             hostname = url.split('/')[0];

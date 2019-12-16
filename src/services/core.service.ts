@@ -22,7 +22,6 @@ export class CoreService {
     private readonly cognitoHttpService: CognitoHttpService;
     private readonly awsCredsService: AWSCredsService;
     private socialAuthService: SocialAuthService | null = null;
-    private isSocialLogin = false;
 
     constructor(config: CognitoServiceConfig) {
         this.cognitoService = new CognitoService(config);
@@ -30,27 +29,27 @@ export class CoreService {
         this.awsCredsService = new AWSCredsService(this.cognitoService);
     }
 
-    // Social Authentication Service
+    // TODO
+    private checkIsSocialLogin() {
+        return false;
+    }
+
     public getCredentialsBySocialLogin(accessKeyId: string, secretKey: string, sessionToken?: string): Promise<AWS.Credentials> {
         this.socialAuthService = new SocialAuthService(accessKeyId, secretKey, sessionToken);
-        this.isSocialLogin = true;
         return this.socialAuthService.getCredentials();
     }
 
-    // AWS Credentials
     public getCognitoIdentityCredentials(): Promise<AWS.CognitoIdentityCredentials> {
         return this.awsCredsService.getCredentials();
     }
 
-    // Cognito Http
     public requestWithSign(method: string = 'GET', endpoint: string, path: string, params?: any, body?: any): Promise<any> {
-        if (this.isSocialLogin || this.socialAuthService !== null) {
+        if (this.checkIsSocialLogin()) {
             return this.socialAuthService.request(method, endpoint, path, params, body);
         }
         return this.cognitoHttpService.request(method, endpoint, path, params, body);
     }
 
-    // Cognito Service
     public getCurrentSession(): Promise<CognitoUserSession> {
         return this.cognitoService.getCurrentSession();
     }
@@ -64,11 +63,13 @@ export class CoreService {
     }
 
     public isAuthenticated(): Promise<boolean> {
+        if (this.checkIsSocialLogin()) {
+            return false; //TODO:
+        }
         return this.cognitoService.isAuthenticated();
     }
 
     public authenticate(username: string, password: string, mfaCode?: string): Promise<AuthenticationState> {
-        this.isSocialLogin = false;
         return this.cognitoService.authenticate(username, password, mfaCode);
     }
 
@@ -81,6 +82,9 @@ export class CoreService {
     }
 
     public logout(): void {
+        if (this.checkIsSocialLogin()) {
+            return this.socialAuthService.logout();
+        }
         return this.cognitoService.logout();
     }
 

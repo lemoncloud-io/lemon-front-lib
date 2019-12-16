@@ -182,7 +182,15 @@ export class CognitoService {
             attributeList.push(new CognitoUserAttribute(userAttribute));
         }
         return new Promise<ISignUpResult>((resolve, reject) => {
-            this.userPool.signUp(user.email, user.password, attributeList, null, (err, result) => {
+            const { email, password } = user;
+            if (!email) {
+                return reject(new Error('.email is required!'));
+            }
+            if (!password) {
+                return reject(new Error('.password is required!'));
+            }
+
+            this.userPool.signUp(email, password, attributeList, null, (err, result) => {
                 if (err) {
                     console.error('register error: ', err);
                     return reject(err);

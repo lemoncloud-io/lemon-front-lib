@@ -1,9 +1,9 @@
 import * as AWS from 'aws-sdk/global';
 
 import { CognitoServiceConfig } from '../helper';
-import { UserPoolService } from './user-pool.service';
-
 import { IdentityService } from '../identity';
+
+import { UserPoolService } from './user-pool.service';
 
 export class CoreService {
 

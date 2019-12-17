@@ -6,12 +6,15 @@ export class IdentityService {
 
     private credentials: Credentials | null = null;
 
-    constructor(accessKeyId: string, secretKey: string, sessionToken?: string) {
+    constructor() {
+    }
+
+    public buildCredentialsByToken(accessKeyId: string, secretKey: string, sessionToken?: string): void {
         this.credentials = new AWS.Credentials(accessKeyId, secretKey, sessionToken);
         AWS.config.credentials = this.credentials;
     }
 
-    public request(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
+    public requestWithSign(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
         const queryParams = { ...params };
         const bodyReq = body && typeof body === 'object' ? JSON.stringify(body) : body;
         const objParams: RequiredHttpParameters = { method, path, queryParams, bodyReq };
@@ -23,8 +26,7 @@ export class IdentityService {
     }
 
     public getCredentials(): Promise<AWS.Credentials | null> {
-        const hasNoCredentials = this.credentials === null;
-        if (hasNoCredentials) {
+        if (this.hasNoCredentials()) {
             return new Promise((resolve) => resolve(null));
         }
 
@@ -37,6 +39,10 @@ export class IdentityService {
     }
 
     public isAuthenticated(): Promise<boolean> {
+        if (this.hasNoCredentials()) {
+            return new Promise((resolve) => resolve(false));
+        }
+
         return new Promise((resolve) => {
             (<AWS.Credentials> AWS.config.credentials).get((error) => {
                 const isAuthenticated = error ? false : true;
@@ -61,5 +67,9 @@ export class IdentityService {
                 resolve(this.credentials);
             });
         });
+    }
+
+    private hasNoCredentials(): boolean {
+        return this.credentials === null;
     }
 }

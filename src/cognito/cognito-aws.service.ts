@@ -28,7 +28,7 @@ export class CognitoAWSService {
      * This will not attempt to reload credentials when they are already loaded into the AWS.config.credentials object.
      */
     public getCredentials(): Promise<AWS.CognitoIdentityCredentials> {
-        const shouldRefresh = (<AWS.Credentials> AWS.config.credentials).needsRefresh();
+        const shouldRefresh = AWS.config.credentials === null || (<AWS.Credentials> AWS.config.credentials).needsRefresh();
         if (shouldRefresh) {
             return this.cognitoService.getCurrentSession().then((session: CognitoUserSession) => {
                 AWS.config.credentials = this.buildCognitoCreds(session);

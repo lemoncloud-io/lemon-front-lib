@@ -2,16 +2,17 @@ import * as AWS from 'aws-sdk/global';
 
 import { CognitoServiceConfig } from '../helper';
 import { UserPoolService } from './user-pool.service';
-import { SocialAuthService } from './social-auth.service';
 
-export class LemonCoreService {
+import { IdentityService } from '../identity';
 
-    private userPoolService: UserPoolService;
-    private socialAuthService: SocialAuthService;
+export class CoreService {
+
+    private readonly userPoolService: UserPoolService;
+    private readonly socialAuthService: IdentityService;
 
     constructor(config: CognitoServiceConfig) {
         this.userPoolService = new UserPoolService(config);
-        this.socialAuthService = new SocialAuthService();
+        this.socialAuthService = new IdentityService();
     }
 
     public isAuthenticated(): Promise<boolean> {
@@ -48,13 +49,12 @@ export class LemonCoreService {
     }
 
     public logout() {
-        this.userPoolService.logout();
-        this.socialAuthService.logout();
-    }
-
-    public buildCredentialsByToken(accessKeyId: string, secretKey: string, sessionToken?: string): Promise<AWS.Credentials> {
-        this.socialAuthService.buildCredentialsByToken(accessKeyId, secretKey, sessionToken);
-        return this.socialAuthService.getCredentials();
+        this.socialAuthService.isAuthenticated()
+            .then(isSocialLogin => {
+                return isSocialLogin
+                    ? this.socialAuthService.logout()
+                    : this.userPoolService.logout();
+            });
     }
 
     public getUserPoolInstance() {
@@ -64,4 +64,11 @@ export class LemonCoreService {
     public getSocialAuthInstance() {
         return this.socialAuthService;
     }
+
+    // for social login
+    public buildCredentialsByToken(accessKeyId: string, secretKey: string, sessionToken?: string): Promise<AWS.Credentials> {
+        this.socialAuthService.buildCredentialsByToken(accessKeyId, secretKey, sessionToken);
+        return this.socialAuthService.getCredentials();
+    }
+
 }

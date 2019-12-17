@@ -5,9 +5,9 @@ import { ServiceConfigurationOptions } from 'aws-sdk/lib/service';
 import { CognitoUserSession } from 'amazon-cognito-identity-js';
 
 import { CognitoService } from './cognito.service';
-import { CognitoServiceConfig } from '../types/cognito.interface';
+import { CognitoServiceConfig } from '../helper/types/cognito.interface';
 
-export class AWSCredsService {
+export class CognitoAWSService {
 
     private loginUrl: string;
     private config: CognitoServiceConfig;

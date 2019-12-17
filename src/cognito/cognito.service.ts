@@ -10,7 +10,7 @@ import {
     ICognitoUserPoolData, CognitoRefreshToken, ICognitoUserSessionData,
 } from 'amazon-cognito-identity-js';
 
-import { CognitoServiceConfig } from '../types/cognito.interface';
+import { CognitoServiceConfig } from '../helper/types/cognito.interface';
 import {
     AuthenticationState,
     AuthenticationSuccess,
@@ -19,14 +19,16 @@ import {
     NewPasswordRequired,
     MFARequired,
     CustomChallenge,
-} from '../types/authentication-state.type';
+} from '../helper/types/authentication-state.type';
 import {
     CodeMismatch,
     ForgotPasswordState,
     ForgotPasswordSuccess,
     ForgotPasswordUserNotFound,
     InputVerificationCode,
-} from '../types/forgot-password-state.type';
+} from '../helper/types/forgot-password-state.type';
+
+import { RequiredHttpParameters, SignedHttpService } from '../helper/services/signed-http.service';
 
 export class CognitoService {
 
@@ -49,6 +51,26 @@ export class CognitoService {
 
     public getConfig(): CognitoServiceConfig {
         return this.config;
+    }
+
+    public request(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
+        const queryParams = { ...params };
+        const bodyReq = body && typeof body === 'object' ? JSON.stringify(body) : body;
+        const objParams: RequiredHttpParameters = { method, path, queryParams, bodyReq };
+
+        // check should refresh session
+        const hasNeedsRefreshProperty = AWS.config.credentials && 'needsRefresh' in AWS.config.credentials;
+        const needsRefresh = hasNeedsRefreshProperty
+            ? (<AWS.Credentials> AWS.config.credentials).needsRefresh()
+            : false;
+
+        // observable chain for request with signed header
+        return new Promise((resolve) => resolve(needsRefresh))
+            .then((shouldRefresh: boolean) => shouldRefresh ? this.refreshSessionAndCredentials() : new Promise(resolve => resolve(true)))
+            .then(() => {
+                const httpService = new SignedHttpService();
+                return httpService.request(endpoint, objParams);
+            });
     }
 
     public getCurrentSession(): Promise<CognitoUserSession> {
@@ -282,6 +304,31 @@ export class CognitoService {
                 }
                 resolve(result);
             })
+        });
+    }
+
+    private refreshSessionAndCredentials() {
+        // https://github.com/aws-amplify/amplify-js/issues/446#issuecomment-375304763 참고
+        return this.getRefreshToken()
+            .then((refreshToken: CognitoRefreshToken) => this.refreshSession(refreshToken))
+            .then((session: ICognitoUserSessionData) => this.doRefreshCredentials(session));
+    }
+
+    private doRefreshCredentials(newSession: any) {
+        return new Promise((resolve, reject) => {
+            const { region, userPoolId } = this.config;
+            const loginUrl = `cognito-idp.${region.toLowerCase()}.amazonaws.com/${userPoolId}`;
+            const globalAWSCredentials: any = <AWS.Credentials>AWS.config.credentials;
+
+            globalAWSCredentials.params.Logins[loginUrl] = newSession.getIdToken().getJwtToken();
+            globalAWSCredentials.refresh((err: any) => {
+                if (err) {
+                    console.log('doRefreshCredentials error', err);
+                    reject(err);
+                }
+                console.log('TOKEN SUCCESSFULLY UPDATED');
+                resolve(true);
+            });
         });
     }
 }

@@ -1,53 +1,36 @@
 import * as AWS from 'aws-sdk/global';
-import { Credentials } from 'aws-sdk/lib/credentials';
+import { AxiosService } from './axios.service';
+import { sigV4Client } from './sig-v4.service';
 
-import sigV4Client from './sig-v4.service';
-import { HttpService } from './http.service';
+export interface RequiredHttpParameters {
+    method: string;
+    path?: string;
+    queryParams?: any;
+    bodyReq?: any;
+}
 
-export class SocialAuthService {
+export class SignedHttpService {
 
-    private credentials: Credentials;
+    constructor() {}
 
-    constructor(accessKeyId: string, secretKey: string, sessionToken?: string) {
-        this.credentials = new AWS.Credentials(accessKeyId, secretKey, sessionToken);
-        AWS.config.credentials = this.credentials;
-    }
-
-    public getCredentials(): Promise<AWS.Credentials> {
-        const shouldRefresh = AWS.config.credentials === null || (<AWS.Credentials> AWS.config.credentials).needsRefresh();
-        if (shouldRefresh) {
-            return this.credentials.refreshPromise().then(() => this.getFreshCredentials());
+    public request(endpoint: string, allParams: RequiredHttpParameters) {
+        if (!endpoint) {
+            throw new Error('@endpoint (string) is required!');
         }
-        return this.getFreshCredentials();
-    }
+        if (!allParams) {
+            throw new Error('@allParams (RequiredHttpParameters) is required!');
+        }
 
-    public request(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
-        const queryParams = { ...params };
-        const bodyReq = body && typeof body === 'object' ? JSON.stringify(body) : body;
-        const objParams = { method, path, queryParams, bodyReq };
-
-        return this.getCredentials()
-            .then(() => this.getSignedClient(endpoint))
-            .then(signedClient => this.getSignedHeader(signedClient, objParams))
-            .then(header => this.executeRequest(header, endpoint, objParams));
-    }
-
-    public logout(): void {
-        AWS.config.credentials = null;
-    }
-
-    private getFreshCredentials(): Promise<AWS.Credentials> {
-        return new Promise((resolve, reject) => {
-            (<AWS.Credentials> AWS.config.credentials).get((error) => {
-                if (error) {
-                    reject(error);
-                }
-                resolve(<AWS.Credentials> AWS.config.credentials);
-            });
-        });
+        return this.getSignedClient(endpoint)
+            .then(signedClient => this.getSignedHeader(signedClient, allParams))
+            .then(header => this.executeRequest(header, endpoint, allParams));
     }
 
     private getSignedClient(endpoint: string): Promise<any> {
+        if (!endpoint) {
+            throw new Error('@endpoint (string) is required!');
+        }
+
         return new Promise((resolve) => {
             // prepare client
             const ok = AWS.config && AWS.config.credentials;
@@ -62,13 +45,13 @@ export class SocialAuthService {
 
             const isNoSignedClient = (signedClient === null || signedClient === undefined);
             if (isNoSignedClient) {
-                console.log('Warning: signedClient is missing => request without header');
+                console.log('Warning: signedClient is missing -> request without header');
             }
             resolve(signedClient);
         });
     }
 
-    private getSignedHeader(signedClient: any, params: any): Promise<any> {
+    private getSignedHeader(signedClient: any, params: RequiredHttpParameters): Promise<any> {
         return new Promise((resolve) => {
             if (!signedClient) {
                 return resolve(null);
@@ -94,24 +77,24 @@ export class SocialAuthService {
         });
     }
 
-    private executeRequest(header: any, endpoint: any, objParams: any) {
+    private executeRequest(header: any, endpoint: string, objParams: RequiredHttpParameters) {
         // execute http request.
         const { method, path, queryParams, bodyReq } = objParams;
 
         const headers = header ? header : { 'Content-Type': 'application/json' };
-        const httpClient = new HttpService({ headers });
+        const axiosService = new AxiosService({ headers });
         switch (method.toUpperCase()) {
             case 'POST':
-                return httpClient.post(endpoint + path, bodyReq, queryParams);
+                return axiosService.post(endpoint + path, bodyReq, queryParams);
             case 'PUT':
-                return httpClient.put(endpoint + path, bodyReq, queryParams);
+                return axiosService.put(endpoint + path, bodyReq, queryParams);
             case 'DELETE':
-                return httpClient.delete(endpoint + path, queryParams);
+                return axiosService.delete(endpoint + path, queryParams);
             case 'PATCH':
-                return httpClient.patch(endpoint + path, bodyReq, queryParams);
+                return axiosService.patch(endpoint + path, bodyReq, queryParams);
             case 'GET':
             default:
-                return httpClient.get(endpoint + path, queryParams);
+                return axiosService.get(endpoint + path, queryParams);
         }
     }
 
@@ -119,7 +102,7 @@ export class SocialAuthService {
     private extractHostname(url: string) {
         let hostname;
         //find & remove protocol (http, ftp, etc.) and get hostname
-        if (url.indexOf('//') > -1) {
+        if (url.indexOf("//") > -1) {
             hostname = url.split('/')[2];
         } else {
             hostname = url.split('/')[0];

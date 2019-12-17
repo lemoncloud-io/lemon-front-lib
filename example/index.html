@@ -32,6 +32,7 @@
         clientId: '297afu2njla9kev9f6rt4h4156', // eureka-front-web
     };
     var lemonFrontCore = new Lemon.CoreService(options);
+    var userPoolService = lemonFrontCore.getUserPoolInstance();
 
     function createUserInfoObject(attr) {
         var result = {};
@@ -47,7 +48,7 @@
         var password = document.getElementById('password').value;
         var nickname = 'tester';
 
-        lemonFrontCore.register({ email: email, password: password, nickname: nickname })
+        userPoolService.register({ email: email, password: password, nickname: nickname })
             .then(function(res) {
                 console.log(res);
                 document.getElementById('result').innerText = JSON.stringify(res);
@@ -60,11 +61,11 @@
     function loginToEureka() {
         var email = document.getElementById('email').value;
         var password = document.getElementById('password').value;
-        lemonFrontCore.authenticate(email, password)
+        userPoolService.authenticate(email, password)
             .then(function(res) {
                 console.log(res);
                 document.getElementById('result').innerText = JSON.stringify(res);
-                return lemonFrontCore.getCognitoIdentityCredentials(); // 로그인 후 Credentials 가져와야함
+                return lemonFrontCore.getIdentityCredentials(); // 로그인 후 Credentials 가져와야함
             })
             .catch(function(err) {
                 setErrorMessage(err);
@@ -77,7 +78,7 @@
     }
 
     function getUserAttributes() {
-        lemonFrontCore.getUserAttributes()
+        userPoolService.getUserAttributes()
             .then(function(attr) {
                 console.log(attr);
                 var obj = createUserInfoObject(attr);
@@ -89,10 +90,10 @@
     }
 
     function getCredentials() {
-        lemonFrontCore.getCognitoIdentityCredentials()
+        lemonFrontCore.getIdentityCredentials()
             .then(function(res) {
                 console.log(res);
-                document.getElementById('result').innerText = 'success to get credentials';
+                document.getElementById('result').innerText = 'result: ' + res;
             })
             .catch(function(err) {
                 setErrorMessage(err);
@@ -111,10 +112,10 @@
     }
 
     function refreshSession() {
-        lemonFrontCore.getRefreshToken()
+        userPoolService.getRefreshToken()
             .then(function(token) {
                 console.log('token', token);
-                return lemonFrontCore.refreshSession(token);
+                return userPoolService.refreshSession(token);
             })
             .then(function(session) {
                 console.log('session', session);

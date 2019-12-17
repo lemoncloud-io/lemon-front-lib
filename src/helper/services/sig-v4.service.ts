@@ -295,4 +295,4 @@ sigV4Client.newClient = function(config: any) {
     return awsSigV4Client;
 };
 
-export default sigV4Client;
+export { sigV4Client };

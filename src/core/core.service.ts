@@ -19,11 +19,8 @@ export class CoreService {
         return new Promise((resolve) => {
             Promise.all([this.userPoolService.isAuthenticated(), this.socialAuthService.isAuthenticated()])
                 .then(([isUserPoolLogin, isSocialLogin]) => {
-                    const isAuthenticated = isUserPoolLogin || isSocialLogin;
-                    if (isAuthenticated) {
-                        resolve(true);
-                    }
-                    resolve(false);
+                    const isAuthenticated: boolean = isUserPoolLogin || isSocialLogin;
+                    resolve(isAuthenticated);
                 })
                 .catch(() => resolve(false))
         });

@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
@@ -5,21 +6,30 @@
 <body>
 <script type="text/javascript" src="../dist/lemon.front.bundle.js" charset="utf-8"></script>
 <div class="log-form">
-    <h2>Login to your account</h2>
+    <h3>Login With Cognito</h3>
     <input type="text" id="email" title="email" placeholder="email" />
     <input type="password" id="password" title="password" placeholder="password" />
     <button class="btn" onclick="loginToEureka()">Login</button>
     <button class="btn" onclick="register()">Register</button>
     <button class="btn" onclick="logout()">Logout</button>
+    <br>
     <button class="btn" onclick="getCredentials()">Get Credentials</button>
+    <button class="btn" onclick="getUserAttributes()">Get user attributes</button>
+    <button class="btn" onclick="isAuthenticated()">Check isAuthenticated</button>
+    <button class="btn" onclick="refreshSession()">Get refreshSession</button>
 </div>
 <div>
-    Request
-    <button class="btn" onclick="getUserAttributes()">get user attributes</button>
-    <button class="btn" onclick="isAuthenticated()">check isAuthenticated</button>
-    <button class="btn" onclick="refreshSession()">get refreshSession</button>
-    <button class="btn" onclick="getAllInquiries()">request API Gateway</button>
-    <button class="btn" onclick="requestTestWithoutCredentials()">request w/o Credentials</button>
+    <h3>Kakao Login</h3>
+    <button class="btn" onclick="loginWithKakao()">Kakao Login</button>
+    <h4 id="kakao-result"></h4>
+</div>
+<div>
+    <h3>HTTP Request</h3>
+    <button class="btn" onclick="getAllInquiries()">Request API Gateway</button>
+    <button class="btn" onclick="requestTestWithoutCredentials()">Request w/o Credentials</button>
+</div>
+<div>
+    <h3>Result</h3>
     <h4 id="result"></h4>
 </div>
 
@@ -74,7 +84,7 @@
 
     function logout() {
         lemonFrontCore.logout();
-        location.reload();
+        location.replace('http://localhost:8888');
     }
 
     function getUserAttributes() {
@@ -155,6 +165,40 @@
         document.getElementById('result').innerText = 'ERROR: ' + err.message;
     }
 
+    function loginWithKakao() {
+        var OAUTH_ENPOINT = 'https://dev.oauth.lemoncloud.io';
+        var CLIENT_ID_KAKAO = '31863a03d75db2967d9138ea8c60de05';
+        var REDIRECT_URI = 'http://localhost:8888';
+        // lemon oauth api를 통해 redirect 되서 redirectUrl로 돌아옴
+        window.location.replace(`${OAUTH_ENPOINT}/oauth/kakao/authorize?client=${CLIENT_ID_KAKAO}&redirect=${REDIRECT_URI}`);
+    }
+
+    function checkHasKakaoCode() {
+        var urlParams = new URLSearchParams(window.location.search);
+        var codeData = urlParams.get('code');
+        if (!codeData) {
+            return;
+        }
+
+        console.log(codeData);
+        var ENDPOINT = 'https://dev.oauth.lemoncloud.io/oauth/kakao/token';
+        lemonFrontCore.requestWithSign('POST', ENDPOINT, '/', { code: codeData }, { code: codeData })
+            .then(function(data) {
+                console.log('credential', data); // result: { credential: { AccessKeyId, SecretKey, SessionToken }, identityId, identityPoolId, identityToken }
+                var credential = data.credential;
+                var sessionToken = credential.SessionToken ? credential.SessionToken : ''; // sessionToken: optional
+                return lemonFrontCore.buildCredentialsByToken(credential.AccessKeyId, credential.SecretKey, sessionToken);
+            })
+            .then(function(data) {
+                console.log('access Key', data);
+                document.getElementById('kakao-result').innerText = JSON.stringify(data);
+            })
+            .catch(function(err) {
+                setErrorMessage(err);
+            });
+    }
+
+    checkHasKakaoCode();
 </script>
 </body>
 </html>

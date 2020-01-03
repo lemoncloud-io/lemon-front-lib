@@ -9,3 +9,10 @@ Core JS library for Lemoncloud; written by Typescript
 ```
 $ npm install @lemoncloud/lemon-front-lib
 ```
+
+## Example
+
+```
+$ node example/simple.js
+# open localhost:8888 on browser
+```

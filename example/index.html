@@ -6,7 +6,7 @@
 <body>
 <script type="text/javascript" src="../dist/lemon.front.bundle.js" charset="utf-8"></script>
 <div class="log-form">
-    <h3>Login With Cognito</h3>
+    <h3>Login Eureka User Pool(Cognito)</h3>
     <input type="text" id="email" title="email" placeholder="email" />
     <input type="password" id="password" title="password" placeholder="password" />
     <button class="btn" onclick="loginToEureka()">Login</button>
@@ -25,8 +25,9 @@
 </div>
 <div>
     <h3>HTTP Request</h3>
-    <button class="btn" onclick="getAllInquiries()">Request API Gateway</button>
-    <button class="btn" onclick="requestTestWithoutCredentials()">Request w/o Credentials</button>
+    <button class="btn" onclick="getAllInquiries()">Request Eureka(authorizer)</button>
+    <button class="btn" onclick="getOauthUser()">Request User(authorizer)</button>
+    <button class="btn" onclick="requestTestWithoutCredentials()">Request Hello</button>
 </div>
 <div>
     <h3>Result</h3>
@@ -148,9 +149,18 @@
             });
     }
 
+    function getOauthUser() {
+        var ENDPOINT = 'https://dev.oauth.lemoncloud.io/user/0';
+        simpleGetRequest(ENDPOINT);
+    }
+
     function requestTestWithoutCredentials() {
-        var ENDPOINT = 'https://jsonplaceholder.typicode.com/todos/1';
-        lemonFrontCore.requestWithSign('GET', ENDPOINT, '/')
+        var ENDPOINT = 'https://dev.oauth.lemoncloud.io/hello/0';
+        simpleGetRequest(ENDPOINT);
+    }
+
+    function simpleGetRequest(endpoint) {
+        lemonFrontCore.requestWithSign('GET', endpoint, '/')
             .then(function(mock) {
                 console.log('mock', mock);
                 document.getElementById('result').innerText = JSON.stringify(mock);
@@ -182,7 +192,7 @@
 
         console.log(codeData);
         var ENDPOINT = 'https://dev.oauth.lemoncloud.io/oauth/kakao/token';
-        lemonFrontCore.requestWithSign('POST', ENDPOINT, '/', { code: codeData }, { code: codeData })
+        lemonFrontCore.requestWithSign('POST', ENDPOINT, '/', {}, { code: codeData })
             .then(function(data) {
                 console.log('credential', data); // result: { credential: { AccessKeyId, SecretKey, SessionToken }, identityId, identityPoolId, identityToken }
                 var credential = data.credential;

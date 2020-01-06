@@ -14,12 +14,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v1
-      - name: npm/registry setup
-         uses: actions/setup-node@v1
-         with:
-           node-version: ${{ matrix.node-version }}
-           registry-url: https://registry.npmjs.org/
-           scope: '@lemoncloud'
+      - uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: https://registry.npmjs.org/
+          scope: '@lemoncloud'
       - name: Cache node modules
         uses: actions/cache@v1
         with:

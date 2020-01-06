@@ -1,8 +1,6 @@
-# lemon-front-lib
+# lemon-front-lib [![build status](https://github.com/lemoncloud-io/lemon-front-lib/workflows/Build/badge.svg)](https://github.com/lemoncloud-io/lemon-front-lib/actions)
 
-[![Build Status](https://travis-ci.org/lemoncloud-io/lemon-front-lib.svg?branch=develop)](https://travis-ci.org/lemoncloud-io/lemon-front-lib)
-
-Core JS library for Lemoncloud; written by Typescript
+Core JS library for [Lemoncloud](https://lemoncloud.io); written by Typescript
 
 ## Install
 

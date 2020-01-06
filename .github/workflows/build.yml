@@ -14,7 +14,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v1
-
+      - name: "npm/registry setup"
+         uses: actions/setup-node@v1
+         with:
+           node-version: ${{ matrix.node-version }}
+           registry-url: https://registry.npmjs.org/
+           scope: '@lemoncloud'
       - name: Cache node modules
         uses: actions/cache@v1
         with:
@@ -26,12 +31,17 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-      - name: npm ci and npm run build
+      - name: npm ci
         run: |
           npm ci
-          npm run build:ci
       - name: publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          npm publish --access public
+          LATEST=`npm view . version`
+          CURRENT=`cat package.json | jq -r .version`
+          if [ "$LATEST" != "$CURRENT" ]
+          then
+            npm ci
+            npm publish
+          fi

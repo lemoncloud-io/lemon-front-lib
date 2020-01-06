@@ -1,4 +1,4 @@
-name: Build
+name: Build and Publish
 on:
   push:
     branches:
@@ -30,3 +30,8 @@ jobs:
         run: |
           npm ci
           npm run build:ci
+      - name: publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm publish --access public

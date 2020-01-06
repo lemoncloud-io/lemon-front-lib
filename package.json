@@ -15,7 +15,8 @@
         "lint": "tsc --noEmit && eslint 'src/**/*.{js,ts,jsx,tsx}' --fix",
         "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
         "prepare": "npm run build",
-        "prepublishOnly": "npm test"
+        "prepublishOnly": "npm test",
+        "build:ci": "npm run test && npm run build"
     },
     "browser": {
         "fs": false

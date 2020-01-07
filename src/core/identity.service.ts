@@ -10,6 +10,13 @@ export class IdentityService {
     }
 
     public buildCredentialsByToken(accessKeyId: string, secretKey: string, sessionToken?: string): void {
+        if (!accessKeyId) {
+            throw new Error('@accessKeyId (string) is required!');
+        }
+        if (!secretKey) {
+            throw new Error('@secretKey (string) is required!');
+        }
+
         this.credentials = new AWS.Credentials(accessKeyId, secretKey, sessionToken);
         AWS.config.credentials = this.credentials;
     }

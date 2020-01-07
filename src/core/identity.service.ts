@@ -4,9 +4,17 @@ import { RequiredHttpParameters, SignedHttpService } from '../helper/services/si
 
 export class IdentityService {
 
-    private credentials: Credentials | null = null;
+    private credentials: Credentials | null;
 
     constructor() {
+        if (AWS.config.credentials) {
+            this.credentials = <AWS.Credentials>AWS.config.credentials;
+            this.getCredentials().then(() => {
+                console.log('success to get credentials');
+            });
+        } else {
+            this.credentials = null;
+        }
     }
 
     public buildCredentialsByToken(accessKeyId: string, secretKey: string, sessionToken?: string): void {

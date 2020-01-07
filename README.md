@@ -66,6 +66,6 @@ AuthService.logout();
 ## Example
 
 ```
-$ node example/simple.js
+$ node example/example.js
 # open localhost:8888 on browser
 ```

@@ -3,7 +3,8 @@ const fs = require('fs');
 
 const app = http.createServer(function(request,response){
     let url = request.url;
-    if (request.url === '/' || request.url.includes('code') || request.url.includes('favicon.ico')) {
+    const shouldReturnIndex = request.url === '/' || request.url.includes('code') || request.url.includes('favicon.ico');
+    if (shouldReturnIndex) {
         url = '/index.html';
     }
     if (request.url.includes('lemon.front.bundle.js')) {

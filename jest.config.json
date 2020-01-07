@@ -5,7 +5,8 @@
     "globals": {
         "ts-jest": {
             "tsConfig": "tsconfig.json"
-        }
+        },
+        "window": {}
     },
     "moduleFileExtensions": ["js", "jsx", "ts", "tsx"],
     "testEnvironment": "node",
@@ -13,5 +14,6 @@
     "transform": {
         "^.+\\.(ts|tsx|js|jsx)$": "ts-jest"
     },
+    "setupFiles": ["jest-localstorage-mock"],
     "preset": "ts-jest/presets/js-with-ts"
 }

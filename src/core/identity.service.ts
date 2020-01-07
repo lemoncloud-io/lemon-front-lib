@@ -10,11 +10,8 @@ export class IdentityService {
 
     constructor() {
         this.lemonStorage = new StorageService();
-        const cachedAccessKeyId = this.lemonStorage.getValue('accessKeyId');
-        const cachedSecretKey = this.lemonStorage.getValue('secretKey');
-        const cachedSessionToken = this.lemonStorage.getValue('sessionToken');
 
-        console.log(cachedAccessKeyId, cachedSecretKey, cachedSessionToken);
+        const { cachedAccessKeyId, cachedSecretKey, cachedSessionToken } = this.lemonStorage.getCachedCredentialItems();
         if (cachedAccessKeyId !== null && cachedSecretKey !== null) {
             this.buildCredentialsByToken(cachedAccessKeyId, cachedSecretKey, cachedSessionToken);
         }
@@ -30,9 +27,7 @@ export class IdentityService {
         this.credentials = new AWS.Credentials(accessKeyId, secretKey, sessionToken);
         AWS.config.credentials = this.credentials;
         // save to localStorage
-        this.lemonStorage.setValue('accessKeyId', accessKeyId);
-        this.lemonStorage.setValue('secretKey', secretKey);
-        this.lemonStorage.setValue('sessionToken', sessionToken);
+        this.lemonStorage.setCredentialItems({ accessKeyId, secretKey, sessionToken });
     }
 
     public requestWithSign(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
@@ -52,7 +47,6 @@ export class IdentityService {
         }
 
         const credentials = (<AWS.Credentials> AWS.config.credentials);
-        console.log(credentials);
         const shouldRefresh = credentials.needsRefresh();
         if (shouldRefresh) {
             return credentials.refreshPromise().then(() => this.getCurrentCredentials());
@@ -77,9 +71,7 @@ export class IdentityService {
         this.credentials = null;
         AWS.config.credentials = null;
         // remove from localStorage
-        this.lemonStorage.removeValue('accessKeyId');
-        this.lemonStorage.removeValue('secretKey');
-        this.lemonStorage.removeValue('sessionToken');
+        this.lemonStorage.removeCredentialItems();
     }
 
     private getCurrentCredentials(): Promise<AWS.Credentials> {
@@ -98,4 +90,5 @@ export class IdentityService {
     private hasNoCredentials(): boolean {
         return this.credentials === null;
     }
+
 }

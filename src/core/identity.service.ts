@@ -1,19 +1,22 @@
 import * as AWS from 'aws-sdk/global';
 import { Credentials } from 'aws-sdk/lib/credentials';
 import { RequiredHttpParameters, SignedHttpService } from '../helper/services/signed-http.service';
+import { StorageService } from '../helper';
 
 export class IdentityService {
 
-    private credentials: Credentials | null;
+    private credentials: Credentials | null = null;
+    private lemonStorage: StorageService;
 
     constructor() {
-        if (AWS.config.credentials) {
-            this.credentials = <AWS.Credentials>AWS.config.credentials;
-            this.getCredentials().then(() => {
-                console.log('success to get credentials');
-            });
-        } else {
-            this.credentials = null;
+        this.lemonStorage = new StorageService();
+        const cachedAccessKeyId = this.lemonStorage.getValue('accessKeyId');
+        const cachedSecretKey = this.lemonStorage.getValue('secretKey');
+        const cachedSessionToken = this.lemonStorage.getValue('sessionToken');
+
+        console.log(cachedAccessKeyId, cachedSecretKey, cachedSessionToken);
+        if (cachedAccessKeyId !== null && cachedSecretKey !== null) {
+            this.buildCredentialsByToken(cachedAccessKeyId, cachedSecretKey, cachedSessionToken);
         }
     }
 
@@ -24,9 +27,12 @@ export class IdentityService {
         if (!secretKey) {
             throw new Error('@secretKey (string) is required!');
         }
-
         this.credentials = new AWS.Credentials(accessKeyId, secretKey, sessionToken);
         AWS.config.credentials = this.credentials;
+        // save to localStorage
+        this.lemonStorage.setValue('accessKeyId', accessKeyId);
+        this.lemonStorage.setValue('secretKey', secretKey);
+        this.lemonStorage.setValue('sessionToken', sessionToken);
     }
 
     public requestWithSign(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
@@ -46,6 +52,7 @@ export class IdentityService {
         }
 
         const credentials = (<AWS.Credentials> AWS.config.credentials);
+        console.log(credentials);
         const shouldRefresh = credentials.needsRefresh();
         if (shouldRefresh) {
             return credentials.refreshPromise().then(() => this.getCurrentCredentials());
@@ -69,6 +76,10 @@ export class IdentityService {
     public logout(): void {
         this.credentials = null;
         AWS.config.credentials = null;
+        // remove from localStorage
+        this.lemonStorage.removeValue('accessKeyId');
+        this.lemonStorage.removeValue('secretKey');
+        this.lemonStorage.removeValue('sessionToken');
     }
 
     private getCurrentCredentials(): Promise<AWS.Credentials> {

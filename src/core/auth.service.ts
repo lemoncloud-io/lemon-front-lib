@@ -1,6 +1,6 @@
 import * as AWS from 'aws-sdk/global';
 
-import { IdentityService } from '../identity';
+import { IdentityService } from './identity.service';
 
 export class AuthService {
 

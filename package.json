@@ -10,7 +10,7 @@
         "build": "npm run build:lib && npm run build:dist",
         "build:lib": "tsc -d",
         "build:dist": "webpack --progress --profile --bail --optimize-minimize",
-        "dev:test": "jest --config=jest.config.json --watchAll",
+        "test:dev": "jest --config=jest.config.json --watchAll",
         "test": "jest --config=jest.config.json",
         "lint": "tsc --noEmit && eslint 'src/**/*.{js,ts,jsx,tsx}' --fix",
         "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",

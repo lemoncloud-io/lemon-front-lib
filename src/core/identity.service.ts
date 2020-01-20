@@ -67,11 +67,14 @@ export class IdentityService {
         });
     }
 
-    public logout(): void {
-        this.credentials = null;
-        AWS.config.credentials = null;
-        // remove from localStorage
-        this.lemonStorage.removeCredentialItems();
+    public logout(): Promise<boolean> {
+        return new Promise((resolve) => {
+            this.credentials = null;
+            AWS.config.credentials = null;
+            // remove from localStorage
+            this.lemonStorage.removeCredentialItems();
+            resolve(true)
+        })
     }
 
     private getCurrentCredentials(): Promise<AWS.Credentials> {

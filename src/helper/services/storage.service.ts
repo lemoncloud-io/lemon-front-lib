@@ -43,7 +43,7 @@ export class StorageService {
         this.setItem('secretKey', secretKey);
         this.setItem('sessionToken', sessionToken);
 
-        const expiredTime = new Date().getTime() + (24 * 60 * 60 * 1000); // +24hours
+        const expiredTime = new Date().getTime() + (1 * 60 * 60 * 1000); // +1 hours
         this.setItem('expiredTime', expiredTime.toString());
     }
 

@@ -14,6 +14,8 @@ export class IdentityService {
         if (this.lemonStorage.isValidToken()) {
             const { cachedAccessKeyId, cachedSecretKey, cachedSessionToken } = this.lemonStorage.getCachedCredentialItems();
             this.buildCredentialsByToken(cachedAccessKeyId, cachedSecretKey, cachedSessionToken);
+        } else {
+            this.lemonStorage.removeCredentialItems();
         }
     }
 

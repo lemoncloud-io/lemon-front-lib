@@ -29,7 +29,7 @@ export class AuthService {
         return this.identityService.requestWithSign(method, endpoint, path, params, body);
     }
 
-    public logout() {
-        this.identityService.logout();
+    public logout(): Promise<boolean> {
+        return this.identityService.logout();
     }
 }

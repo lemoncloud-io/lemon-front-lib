@@ -11,8 +11,8 @@ export class IdentityService {
     constructor() {
         this.lemonStorage = new StorageService();
 
-        const { cachedAccessKeyId, cachedSecretKey, cachedSessionToken } = this.lemonStorage.getCachedCredentialItems();
-        if (cachedAccessKeyId !== null && cachedSecretKey !== null) {
+        if (this.lemonStorage.isValidToken()) {
+            const { cachedAccessKeyId, cachedSecretKey, cachedSessionToken } = this.lemonStorage.getCachedCredentialItems();
             this.buildCredentialsByToken(cachedAccessKeyId, cachedSecretKey, cachedSessionToken);
         }
     }
@@ -59,6 +59,10 @@ export class IdentityService {
             return new Promise((resolve) => resolve(false));
         }
 
+        if (!this.lemonStorage.isValidToken()) {
+            return new Promise((resolve) => resolve(false));
+        }
+
         return new Promise((resolve) => {
             (<AWS.Credentials> AWS.config.credentials).get((error) => {
                 const isAuthenticated = error ? false : true;
@@ -67,11 +71,14 @@ export class IdentityService {
         });
     }
 
-    public logout(): void {
-        this.credentials = null;
-        AWS.config.credentials = null;
-        // remove from localStorage
-        this.lemonStorage.removeCredentialItems();
+    public logout(): Promise<boolean> {
+        return new Promise((resolve) => {
+            this.credentials = null;
+            AWS.config.credentials = null;
+            // remove from localStorage
+            this.lemonStorage.removeCredentialItems();
+            resolve(true)
+        })
     }
 
     private getCurrentCredentials(): Promise<AWS.Credentials> {

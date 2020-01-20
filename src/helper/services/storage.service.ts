@@ -1,4 +1,3 @@
-
 export class StorageService {
 
     private storage: any;
@@ -15,6 +14,22 @@ export class StorageService {
         }
     }
 
+    public isValidToken() {
+        const { cachedAccessKeyId, cachedSecretKey } = this.getCachedCredentialItems();
+        if (cachedAccessKeyId === null || cachedSecretKey === null) {
+            return false;
+        }
+        const expired = this.getItem('expiredTime');
+        if (!expired) {
+            return false;
+        }
+        const now = new Date().getTime().toString();
+        if (now >= expired) {
+            return false;
+        }
+        return true;
+    }
+
     public getCachedCredentialItems() {
         const cachedAccessKeyId = this.getItem('accessKeyId');
         const cachedSecretKey = this.getItem('secretKey');
@@ -27,12 +42,16 @@ export class StorageService {
         this.setItem('accessKeyId', accessKeyId);
         this.setItem('secretKey', secretKey);
         this.setItem('sessionToken', sessionToken);
+
+        const expiredTime = new Date().getTime() + (24 * 60 * 60 * 1000); // +24hours
+        this.setItem('expiredTime', expiredTime.toString());
     }
 
     public removeCredentialItems() {
         this.removeItem('accessKeyId');
         this.removeItem('secretKey');
         this.removeItem('sessionToken');
+        this.removeItem('expiredTime');
     }
 
     private setItem(key: string, value: string) {

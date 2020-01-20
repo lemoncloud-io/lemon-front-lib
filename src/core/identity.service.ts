@@ -11,8 +11,8 @@ export class IdentityService {
     constructor() {
         this.lemonStorage = new StorageService();
 
-        const { cachedAccessKeyId, cachedSecretKey, cachedSessionToken } = this.lemonStorage.getCachedCredentialItems();
-        if (cachedAccessKeyId !== null && cachedSecretKey !== null) {
+        if (this.lemonStorage.isValidToken()) {
+            const { cachedAccessKeyId, cachedSecretKey, cachedSessionToken } = this.lemonStorage.getCachedCredentialItems();
             this.buildCredentialsByToken(cachedAccessKeyId, cachedSecretKey, cachedSessionToken);
         }
     }
@@ -56,6 +56,10 @@ export class IdentityService {
 
     public isAuthenticated(): Promise<boolean> {
         if (this.hasNoCredentials()) {
+            return new Promise((resolve) => resolve(false));
+        }
+
+        if (!this.lemonStorage.isValidToken()) {
             return new Promise((resolve) => resolve(false));
         }
 

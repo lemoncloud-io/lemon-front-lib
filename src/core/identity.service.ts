@@ -1,18 +1,22 @@
 import * as AWS from 'aws-sdk/global';
 import { Credentials } from 'aws-sdk/lib/credentials';
+
 import { RequiredHttpParameters, SignedHttpService } from '../helper/services/signed-http.service';
 import { LemonCredentials, LemonOAuthTokenResult, LemonStorageService } from '../helper';
 import { LemonRefreshTokenResult } from '../helper/types/lemon-oauth-token.type';
+import { UtilsService } from '../helper/services/utils.service';
 
 export class IdentityService {
 
     private credentials: Credentials | null = null;
     private lemonStorage: LemonStorageService;
+    private utilsService: UtilsService;
     private oauthURL: string;
 
     constructor(oauthURL: string) {
         this.oauthURL = oauthURL;
         this.lemonStorage = new LemonStorageService();
+        this.utilsService = new UtilsService();
 
         this.checkCachedToken()
             .then(result => {
@@ -133,17 +137,16 @@ export class IdentityService {
 
     private refreshCachedToken() {
         const originToken: LemonOAuthTokenResult = this.lemonStorage.getCachedLemonOAuthToken();
-        const { authId: originAuthId } = originToken;
+        const { authId: originAuthId, accountId, identityId, identityToken, identityPoolId } = originToken;
 
         // TODO: create signature
-        const signature = '';
+        const signature = this.calcSignature(originAuthId, accountId, identityId, identityToken);
         const current = new Date().toISOString();
 
         // $ http POST :8086/oauth/auth001/refresh 'current=2020-02-03T08:02:37.468Z' 'signature='
         return this.requestWithSign('POST', this.oauthURL, `/oauth/${originAuthId}/refresh`, {}, { current, signature })
             .then((result: LemonRefreshTokenResult) => {
                 console.log('refresh: ', result);
-                const { identityPoolId, identityToken } = originToken;
                 const { authId, accountId, identityId, credential } = result;
                 const refreshToken: LemonOAuthTokenResult = { authId, accountId, identityPoolId, identityToken, identityId, credential };
                 this.lemonStorage.saveLemonOAuthToken(refreshToken);
@@ -173,5 +176,19 @@ export class IdentityService {
 
     private hasNoCredentials(): boolean {
         return this.credentials === null && !this.lemonStorage.hasCachedToken();
+    }
+
+    private calcSignature(authId: string, accountId: string, identityId: string, identityToken: string) {
+        const current = new Date().toISOString();
+        const userAgent =navigator.userAgent;
+
+        //! build payload to sign......
+        const data = [current, accountId, identityId, identityToken, userAgent].join('&');
+        //! make signature with auth-id
+        const hmac = (data: string, sig: string) => this.utilsService.hmac(data, sig);
+        const signature = hmac(hmac(hmac(data, authId), accountId), identityId);
+        //! returns signature..........
+        // return new Buffer(signature).toString('base64');
+        return signature;
     }
 }

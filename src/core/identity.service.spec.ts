@@ -58,4 +58,6 @@ describe('IdentityService', () => {
         identityService.logout();
         expect(AWS.config.credentials).toBeNull();
     });
+
+
 });

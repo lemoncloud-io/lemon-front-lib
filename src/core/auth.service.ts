@@ -1,22 +1,22 @@
 import * as AWS from 'aws-sdk/global';
 
+import { LemonOAuthTokenResult } from '../helper';
 import { IdentityService } from './identity.service';
 
 export class AuthService {
 
     private readonly identityService: IdentityService;
 
-    constructor() {
-        this.identityService = new IdentityService();
+    constructor(oauthURL: string = 'http://localhost:8086') {
+        this.identityService = new IdentityService(oauthURL);
     }
 
     public isAuthenticated(): Promise<boolean> {
         return this.identityService.isAuthenticated();
     }
 
-    // for login
-    public buildCredentialsByToken(accessKeyId: string, secretKey: string, sessionToken?: string): Promise<AWS.Credentials> {
-        this.identityService.buildCredentialsByToken(accessKeyId, secretKey, sessionToken);
+    public buildCredentialsByToken(token: LemonOAuthTokenResult): Promise<AWS.Credentials> {
+        this.identityService.buildCredentialsByToken(token);
         return this.identityService.getCredentials();
     }
 

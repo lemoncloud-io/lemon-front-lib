@@ -1,72 +1,133 @@
-export class StorageService {
+import { LemonCredentials, LemonOAuthTokenResult } from '../types/lemon-oauth-token.type';
 
+export class LocalStorageService {
+
+    public prefix: string;
     private storage: any;
-    private static PREFIX = 'LEMON_CREDENTIAL';
 
-    constructor() {
-        // TODO: add memory storage
+    constructor(prefix: string = 'lemon') {
+        this.prefix = prefix;
+
         try {
             this.storage = window.localStorage;
-            this.storage.setItem(`${StorageService.PREFIX}.test-value`, 1);
-            this.storage.removeItem(`${StorageService.PREFIX}.test-value`);
+            this.storage.setItem(`${this.prefix}.test-value`, 1);
+            this.storage.removeItem(`${this.prefix}.test-value`);
         } catch (exception) {
             this.storage = new MemoryStorage();
         }
     }
 
-    public isValidToken() {
-        const { cachedAccessKeyId, cachedSecretKey } = this.getCachedCredentialItems();
-        if (cachedAccessKeyId === null || cachedSecretKey === null) {
-            return false;
-        }
-        const expired = this.getItem('expiredTime');
-        if (!expired) {
-            return false;
-        }
+    public setItem(key: string, value: string) {
+        this.storage.setItem(`${this.prefix}.${key}`, value);
+    }
+
+    public getItem(key: string) {
+        return this.storage.getItem(`${this.prefix}.${key}`);
+    }
+
+    public removeItem(key: string) {
+        this.storage.removeItem(`${this}.${key}`);
+    }
+}
+
+export class LemonStorageService extends LocalStorageService {
+
+    private credentialItemList = [
+        'accountId', 'authId', 'identityId',
+        'identityPoolId', 'identityToken', 'accessKeyId',
+        'secretKey', 'sessionToken', 'expiredTime'
+    ];
+
+    constructor() {
+        super('LEMON_CREDENTIAL');
+    }
+
+    public hasCachedToken(): boolean {
+        const accessKeyId = this.getItem('accessKeyId');
+        const secretKey = this.getItem('secretKey');
+        const expiredTime = this.getItem('expiredTime');
+
+        const hasToken = accessKeyId !== null && secretKey !== null && expiredTime !== null;
+        return hasToken ? true : false;
+    }
+
+    public shouldRefreshToken(): boolean {
+        const expiredTime = this.getItem('expiredTime');
         const now = new Date().getTime().toString();
-        if (now >= expired) {
+
+        if (now > expiredTime) {
             return false;
         }
         return true;
     }
 
-    public getCachedCredentialItems() {
-        const cachedAccessKeyId = this.getItem('accessKeyId');
-        const cachedSecretKey = this.getItem('secretKey');
-        const cachedSessionToken = this.getItem('sessionToken');
-        return { cachedAccessKeyId, cachedSecretKey, cachedSessionToken };
+    public hasValidToken() {
+        const hasCachedToken = this.hasCachedToken();
+        if (!hasCachedToken) {
+            return false;
+        }
+        const shouldRefreshToken = this.shouldRefreshToken();
+        if (shouldRefreshToken) {
+            return false;
+        }
+        return true;
     }
 
-    public setCredentialItems(credentials: { accessKeyId: string, secretKey: string, sessionToken: string }) {
-        const { accessKeyId, secretKey, sessionToken } = credentials;
-        this.setItem('accessKeyId', accessKeyId);
-        this.setItem('secretKey', secretKey);
-        this.setItem('sessionToken', sessionToken);
+    public getCachedCredentialItems(): LemonCredentials {
+        const AccessKeyId = this.getItem('accessKeyId');
+        const SecretKey = this.getItem('secretKey');
+        const SessionToken = this.getItem('sessionToken');
+        return { AccessKeyId, SecretKey, SessionToken };
+    }
 
-        const expiredTime = new Date().getTime() + (1 * 60 * 60 * 1000); // +1 hours
+    public getCachedLemonOAuthToken(): LemonOAuthTokenResult {
+        const result: any = {};
+        this.credentialItemList.map(item => {
+           result[item] = this.getItem(item);
+        });
+
+        const AccessKeyId = this.getItem('accessKeyId');
+        const SecretKey = this.getItem('secretKey');
+        const SessionToken = this.getItem('sessionToken');
+        result.credential = { AccessKeyId, SecretKey, SessionToken };
+
+        delete result.accessKeyId;
+        delete result.secretKey;
+        delete result.sessionToken;
+        delete result.expiredTime;
+
+        return result;
+    }
+
+    public saveLemonOAuthToken(token: LemonOAuthTokenResult) {
+        const { accountId, authId, credential, identityId, identityPoolId, identityToken } = token;
+        const { AccessKeyId, SecretKey, SessionToken } = credential;
+
+        // save items...
+        this.setItem('accountId', accountId);
+        this.setItem('authId', authId);
+        this.setItem('identityId', identityId);
+        this.setItem('identityPoolId', identityPoolId);
+        this.setItem('identityToken', identityToken);
+
+        // credential for AWS
+        this.setItem('accessKeyId', AccessKeyId);
+        this.setItem('secretKey', SecretKey);
+        this.setItem('sessionToken', SessionToken);
+
+        const expiredTime = new Date().getTime() + (1 * 60 * 60 * 1000); // 1 hours
         this.setItem('expiredTime', expiredTime.toString());
+
+        return;
     }
 
-    public removeCredentialItems() {
-        this.removeItem('accessKeyId');
-        this.removeItem('secretKey');
-        this.removeItem('sessionToken');
-        this.removeItem('expiredTime');
-    }
-
-    private setItem(key: string, value: string) {
-        this.storage.setItem(`${StorageService.PREFIX}.${key}`, value);
-    }
-
-    private getItem(key: string) {
-        return this.storage.getItem(`${StorageService.PREFIX}.${key}`);
-    }
-
-    private removeItem(key: string) {
-        this.storage.removeItem(`${StorageService.PREFIX}.${key}`);
+    public clearLemonOAuthToken() {
+        this.credentialItemList.map(item => this.removeItem(`${item}`));
+        return;
     }
 }
 
+// TODO: move below to other path
 let dataMemory: any = {};
 
 class MemoryStorage {

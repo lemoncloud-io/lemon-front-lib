@@ -56,6 +56,10 @@ export class IdentityService {
             return new Promise((resolve) => resolve(null));
         }
 
+        if (!this.lemonStorage.hasCachedToken()) {
+            return new Promise((resolve) => resolve(null));
+        }
+
         if (this.lemonStorage.shouldRefreshToken()) {
             return new Promise(resolve => {
                 this.refreshCachedToken()
@@ -75,6 +79,10 @@ export class IdentityService {
     public isAuthenticated(): Promise<boolean> {
         if (this.hasNoCredentials()) {
             return new Promise(resolve => resolve(false));
+        }
+
+        if (!this.lemonStorage.hasCachedToken()) {
+            return new Promise((resolve) => resolve(false));
         }
 
         if (this.lemonStorage.shouldRefreshToken()) {

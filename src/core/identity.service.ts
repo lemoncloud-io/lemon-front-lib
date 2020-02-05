@@ -62,15 +62,11 @@ export class IdentityService {
 
     getCredentials(): Promise<AWS.Credentials | null> {
         if (!this.lemonStorage.hasCachedToken()) {
-            return new Promise((resolve) => resolve(null));
+            return new Promise(resolve => resolve(null));
         }
 
         if (this.lemonStorage.shouldRefreshToken()) {
-            return new Promise(resolve => {
-                this.refreshCachedToken()
-                    .then(() => this.getCurrentCredentials())
-                    .catch(() => resolve(null));
-            });
+            return this.refreshCachedToken().then(() => this.getCurrentCredentials())
         }
 
         const credentials = (<AWS.Credentials> AWS.config.credentials);
@@ -83,7 +79,7 @@ export class IdentityService {
 
     isAuthenticated(): Promise<boolean> {
         if (!this.lemonStorage.hasCachedToken()) {
-            return new Promise((resolve) => resolve(false));
+            return new Promise(resolve => resolve(false));
         }
 
         if (this.lemonStorage.shouldRefreshToken()) {
@@ -92,22 +88,22 @@ export class IdentityService {
                     .then(() => resolve(true))
                     .catch(() => resolve(false));
             });
-        }
-
-        return new Promise(resolve => {
-            (<AWS.Credentials> AWS.config.credentials).get((error) => {
-                const isAuthenticated = error ? false : true;
-                resolve(isAuthenticated);
+        } else {
+            return new Promise(resolve => {
+                (<AWS.Credentials> AWS.config.credentials).get(error => {
+                    const isAuthenticated = error ? false : true;
+                    resolve(isAuthenticated);
+                });
             });
-        });
+        }
     }
 
     logout(): Promise<boolean> {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             AWS.config.credentials = null;
             // remove data from localStorage
             this.lemonStorage.clearLemonOAuthToken();
-            resolve(true)
+            resolve(true);
         })
     }
 
@@ -141,7 +137,7 @@ export class IdentityService {
         // $ http POST :8086/oauth/auth001/refresh 'current=2020-02-03T08:02:37.468Z' 'signature='
         return this.requestWithSign('POST', this.oauthURL, `/oauth/${originAuthId}/refresh`, {}, { current, signature })
             .then((result: LemonRefreshTokenResult) => {
-                console.log('refresh: ', result);
+                console.log('LemonRefreshToken result: ', result);
                 const { authId, accountId, identityId, credential } = result;
                 const refreshToken: LemonOAuthTokenResult = { authId, accountId, identityPoolId, identityToken, identityId, credential };
                 this.lemonStorage.saveLemonOAuthToken(refreshToken);
@@ -160,7 +156,8 @@ export class IdentityService {
             const credentials = (<AWS.Credentials> AWS.config.credentials);
             credentials.get((error) => {
                 if (error) {
-                    reject(error);
+                    console.log('Error on getCurrentCredentials: ', error);
+                    reject(null);
                 }
                 const awsCredentials = <AWS.Credentials> AWS.config.credentials;
                 resolve(awsCredentials);

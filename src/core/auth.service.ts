@@ -11,25 +11,29 @@ export class AuthService {
         this.identityService = new IdentityService(oauthURL);
     }
 
-    public isAuthenticated(): Promise<boolean> {
+    isAuthenticated(): Promise<boolean> {
         return this.identityService.isAuthenticated();
     }
 
-    public buildCredentialsByToken(token: LemonOAuthTokenResult): Promise<AWS.Credentials> {
+    buildCredentialsByToken(token: LemonOAuthTokenResult): Promise<AWS.Credentials> {
         this.identityService.buildCredentialsByToken(token);
         return this.identityService.getCredentials();
     }
 
-    public getCredentials(): Promise<AWS.Credentials | null> {
+    getCredentials(): Promise<AWS.Credentials | null> {
         return this.identityService.getCredentials()
             .catch(() => null);
     }
 
-    public requestWithSign(method: string = 'GET', endpoint: string, path: string, params?: any, body?: any): Promise<any> {
-        return this.identityService.requestWithSign(method, endpoint, path, params, body);
+    request(method: string = 'GET', endpoint: string, path: string, params?: any, body?: any): Promise<any> {
+        return this.identityService.request(method, endpoint, path, params, body);
     }
 
-    public logout(): Promise<boolean> {
+    requestWithCredentials(method: string = 'GET', endpoint: string, path: string, params?: any, body?: any): Promise<any> {
+        return this.identityService.requestWithCredentials(method, endpoint, path, params, body);
+    }
+
+    logout(): Promise<boolean> {
         return this.identityService.logout();
     }
 }

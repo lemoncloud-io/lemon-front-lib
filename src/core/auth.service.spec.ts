@@ -79,8 +79,8 @@ describe('AuthService', () => {
         expect(spyLogout).toHaveBeenCalled();
     });
 
-    it('requestWithSign() should call requestWithSign on IdentityService', async () => {
-        const spyRequestWithSign: SpyInstance = jest.spyOn(IdentityService.prototype as any, 'requestWithSign');
+    it('request() should call request on IdentityService', async () => {
+        const spyRequest: SpyInstance = jest.spyOn(IdentityService.prototype as any, 'request');
 
         const method = 'GET';
         const endpoint = 'MY_SERVER';
@@ -88,7 +88,20 @@ describe('AuthService', () => {
         const param = {};
         const body = {};
 
-        await expect(authService.requestWithSign(method, endpoint, path, param, body)).rejects.toThrowError();
-        expect(spyRequestWithSign).toHaveBeenCalledWith(method, endpoint, path, param, body);
+        await expect(authService.request(method, endpoint, path, param, body)).rejects.toThrowError();
+        expect(spyRequest).toHaveBeenCalledWith(method, endpoint, path, param, body);
+    });
+
+    it('requestWithCredentials() should call requestWithCredentials on IdentityService', async () => {
+        const spyRequestWithCredentials: SpyInstance = jest.spyOn(IdentityService.prototype as any, 'requestWithCredentials');
+
+        const method = 'GET';
+        const endpoint = 'MY_SERVER';
+        const path = '/';
+        const param = {};
+        const body = {};
+
+        await expect(authService.requestWithCredentials(method, endpoint, path, param, body)).rejects.toThrowError();
+        expect(spyRequestWithCredentials).toHaveBeenCalledWith(method, endpoint, path, param, body);
     });
 });

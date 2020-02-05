@@ -105,10 +105,8 @@
         var ENDPOINT = 'https://dev.oauth.lemoncloud.io/oauth/kakao/token';
         authService.requestWithSign('POST', ENDPOINT, '/', {}, { code: codeData })
             .then(function(data) {
-                console.log('credential', data); // result: { credential: { AccessKeyId, SecretKey, SessionToken }, identityId, identityPoolId, identityToken }
-                var credential = data.credential;
-                var sessionToken = credential.SessionToken ? credential.SessionToken : ''; // sessionToken: optional
-                return authService.buildCredentialsByToken(credential.AccessKeyId, credential.SecretKey, sessionToken);
+                console.log('token', data); // result: { credential: { AccessKeyId, SecretKey, SessionToken }, identityId, identityPoolId, identityToken }
+                return authService.buildCredentialsByToken(data);
             })
             .then(function(data) {
                 console.log('access Key', data);

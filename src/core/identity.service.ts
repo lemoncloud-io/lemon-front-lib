@@ -1,34 +1,39 @@
 import * as AWS from 'aws-sdk/global';
-import { Credentials } from 'aws-sdk/lib/credentials';
 
-import { RequiredHttpParameters, SignedHttpService } from '../helper/services/signed-http.service';
-import { LemonCredentials, LemonOAuthTokenResult, LemonStorageService } from '../helper';
-import { LemonRefreshTokenResult } from '../helper/types/lemon-oauth-token.type';
+// services
+import { LemonStorageService } from './lemon-storage.service';
 import { UtilsService } from '../helper/services/utils.service';
+import { SignedHttpService } from '../helper/services/signed-http.service';
+
+// types
+import { RequiredHttpParameters } from '../helper/services/signed-http.service';
+import { LemonCredentials, LemonOAuthTokenResult, LemonRefreshTokenResult } from '../helper';
 
 export class IdentityService {
 
-    private credentials: Credentials | null = null;
+    private oauthURL: string = 'http://localhost:8086';
+
     private lemonStorage: LemonStorageService;
     private utilsService: UtilsService;
-    private oauthURL: string;
 
-    constructor(oauthURL: string) {
-        this.oauthURL = oauthURL;
+    constructor(oauthURL?: string) {
+        if (oauthURL) {
+            this.oauthURL = oauthURL;
+        }
         this.lemonStorage = new LemonStorageService();
         this.utilsService = new UtilsService();
 
         this.checkCachedToken()
             .then(result => {
-                console.log(result);
+                console.log('checkCachedToken: ', result);
             })
             .catch(err => {
-                console.log(err);
+                console.log('checkCachedToken: ' , err);
                 this.lemonStorage.clearLemonOAuthToken();
             });
     }
 
-    public buildCredentialsByToken(token: LemonOAuthTokenResult): void {
+    buildCredentialsByToken(token: LemonOAuthTokenResult): void {
         const { credential } = token;
         const { AccessKeyId, SecretKey } = credential;
         if (!AccessKeyId) {
@@ -44,7 +49,7 @@ export class IdentityService {
         this.createAWSCredentials(credential);
     }
 
-    public requestWithSign(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
+    requestWithSign(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
         const queryParams = { ...params };
         const bodyReq = body && typeof body === 'object' ? JSON.stringify(body) : body;
         const objParams: RequiredHttpParameters = { method, path, queryParams, bodyReq };
@@ -55,11 +60,7 @@ export class IdentityService {
         });
     }
 
-    public getCredentials(): Promise<AWS.Credentials | null> {
-        if (this.hasNoCredentials()) {
-            return new Promise((resolve) => resolve(null));
-        }
-
+    getCredentials(): Promise<AWS.Credentials | null> {
         if (!this.lemonStorage.hasCachedToken()) {
             return new Promise((resolve) => resolve(null));
         }
@@ -80,11 +81,7 @@ export class IdentityService {
         return this.getCurrentCredentials();
     }
 
-    public isAuthenticated(): Promise<boolean> {
-        if (this.hasNoCredentials()) {
-            return new Promise(resolve => resolve(false));
-        }
-
+    isAuthenticated(): Promise<boolean> {
         if (!this.lemonStorage.hasCachedToken()) {
             return new Promise((resolve) => resolve(false));
         }
@@ -105,9 +102,8 @@ export class IdentityService {
         });
     }
 
-    public logout(): Promise<boolean> {
+    logout(): Promise<boolean> {
         return new Promise((resolve) => {
-            this.credentials = null;
             AWS.config.credentials = null;
             // remove data from localStorage
             this.lemonStorage.clearLemonOAuthToken();
@@ -126,12 +122,12 @@ export class IdentityService {
                 this.refreshCachedToken()
                     .then(() => resolve('refreshed!'))
                     .catch(err => reject(err));
+            } else {
+                // build AWS token
+                const credential = this.lemonStorage.getCachedCredentialItems();
+                this.createAWSCredentials(credential);
+                resolve('build credential!');
             }
-
-            // build AWS token
-            const credential = this.lemonStorage.getCachedCredentialItems();
-            this.createAWSCredentials(credential);
-            resolve('build credential!');
         });
     }
 
@@ -139,9 +135,8 @@ export class IdentityService {
         const originToken: LemonOAuthTokenResult = this.lemonStorage.getCachedLemonOAuthToken();
         const { authId: originAuthId, accountId, identityId, identityToken, identityPoolId } = originToken;
 
-        // TODO: create signature
-        const signature = this.calcSignature(originAuthId, accountId, identityId, identityToken);
         const current = new Date().toISOString();
+        const signature = this.utilsService.calcSignature(originAuthId, accountId, identityId, identityToken, current);
 
         // $ http POST :8086/oauth/auth001/refresh 'current=2020-02-03T08:02:37.468Z' 'signature='
         return this.requestWithSign('POST', this.oauthURL, `/oauth/${originAuthId}/refresh`, {}, { current, signature })
@@ -157,8 +152,7 @@ export class IdentityService {
 
     private createAWSCredentials(credential: LemonCredentials) {
         const { AccessKeyId, SecretKey, SessionToken } = credential;
-        this.credentials = new AWS.Credentials(AccessKeyId, SecretKey, SessionToken);
-        AWS.config.credentials = this.credentials;
+        AWS.config.credentials = new AWS.Credentials(AccessKeyId, SecretKey, SessionToken);
     }
 
     private getCurrentCredentials(): Promise<AWS.Credentials> {
@@ -168,27 +162,9 @@ export class IdentityService {
                 if (error) {
                     reject(error);
                 }
-                this.credentials = <AWS.Credentials> AWS.config.credentials;
-                resolve(this.credentials);
+                const awsCredentials = <AWS.Credentials> AWS.config.credentials;
+                resolve(awsCredentials);
             });
         });
-    }
-
-    private hasNoCredentials(): boolean {
-        return this.credentials === null && !this.lemonStorage.hasCachedToken();
-    }
-
-    private calcSignature(authId: string, accountId: string, identityId: string, identityToken: string) {
-        const current = new Date().toISOString();
-        const userAgent =navigator.userAgent;
-
-        //! build payload to sign......
-        const data = [current, accountId, identityId, identityToken, userAgent].join('&');
-        //! make signature with auth-id
-        const hmac = (data: string, sig: string) => this.utilsService.hmac(data, sig);
-        const signature = hmac(hmac(hmac(data, authId), accountId), identityId);
-        //! returns signature..........
-        // return new Buffer(signature).toString('base64');
-        return signature;
     }
 }

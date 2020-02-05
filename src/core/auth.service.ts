@@ -7,7 +7,7 @@ export class AuthService {
 
     private readonly identityService: IdentityService;
 
-    constructor(oauthURL: string = 'http://localhost:8086') {
+    constructor(oauthURL?: string) {
         this.identityService = new IdentityService(oauthURL);
     }
 

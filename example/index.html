@@ -71,7 +71,7 @@
     }
 
     function simpleGetRequest(endpoint) {
-        authService.requestWithSign('GET', endpoint, '/')
+        authService.requestWithCredentials('GET', endpoint, '/')
             .then(function(mock) {
                 console.log('mock', mock);
                 document.getElementById('result').innerText = JSON.stringify(mock);

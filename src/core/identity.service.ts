@@ -50,7 +50,16 @@ export class IdentityService {
         this.createAWSCredentials(credential);
     }
 
-    requestWithSign(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
+    request(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
+        const queryParams = { ...params };
+        const bodyReq = body && typeof body === 'object' ? JSON.stringify(body) : body;
+        const objParams: RequiredHttpParameters = { method, path, queryParams, bodyReq };
+
+        const httpService = new SignedHttpService();
+        return httpService.request(endpoint, objParams);
+    }
+
+    requestWithCredentials(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
         const queryParams = { ...params };
         const bodyReq = body && typeof body === 'object' ? JSON.stringify(body) : body;
         const objParams: RequiredHttpParameters = { method, path, queryParams, bodyReq };
@@ -59,15 +68,6 @@ export class IdentityService {
             const httpService = new SignedHttpService();
             return httpService.request(endpoint, objParams);
         });
-    }
-
-    simpleRequest(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
-        const queryParams = { ...params };
-        const bodyReq = body && typeof body === 'object' ? JSON.stringify(body) : body;
-        const objParams: RequiredHttpParameters = { method, path, queryParams, bodyReq };
-
-        const httpService = new SignedHttpService();
-        return httpService.request(endpoint, objParams);
     }
 
     getCredentials(): Promise<AWS.Credentials | null> {
@@ -147,8 +147,8 @@ export class IdentityService {
         const signature = this.utils.calcSignature(payload, current);
 
         // $ http POST :8086/oauth/auth001/refresh 'current=2020-02-03T08:02:37.468Z' 'signature='
-        // requestWithSign()의 경우, 내부에서 getCredential() 호출하기 때문에 recursive 발생함
-        return this.simpleRequest('POST', this.oauthURL, `/oauth/${originAuthId}/refresh`, {}, { current, signature })
+        // requestWithCredentials()의 경우, 내부에서 getCredential() 호출하기 때문에 recursive 발생함
+        return this.request('POST', this.oauthURL, `/oauth/${originAuthId}/refresh`, {}, { current, signature })
             .then((result: LemonRefreshTokenResult) => {
                 console.log('LemonRefreshToken result: ', result);
                 const { authId, accountId, identityId, credential } = result;

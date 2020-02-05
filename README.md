@@ -15,6 +15,9 @@ $ yarn add @lemoncloud/lemon-front-lib
 ```typescript
 import { AuthService } from '@lemoncloud/lemon-front-lib';
 const authService = new AuthService();
+
+const OAUTH_ENDPOINT = 'http://localhost:8086'; // refresh 때 필요
+const authService = new AuthService(OAUTH_ENDPOINT);
 ````
 
 ### Authentication
@@ -27,10 +30,7 @@ const ENDPOINT = 'https://..../oauth/kakao/token'; // lemoncloud oauth-api
 const body = { code }; // get from kakao, naver, google...
 
 const credentials = authService.requestWithSign('POST', ENDPOINT, '/', {}, body)
-    .then(data => {
-        const { credential: { AccessKeyId, SecretKey, SessionToken } } = data;
-        return authService.buildCredentialsByToken(AccessKeyId, SecretKey, SessionToken);
-    });
+    .then(data => authService.buildCredentialsByToken(data));
 ```
 
 #### isAuthenticated()
@@ -47,13 +47,22 @@ AWS Credentials 리턴. 로그인하지 않았을 경우 `null` 리턴
 AuthService.getCredentials();
 ```
 
-#### requestWithSign()
+#### request()
 `axios`를 이용한 HTTP 요청. AWS Credentials이 있을 경우, Signature V4 Signing 과정을 거쳐 요청
 
 ```typescript
-AuthService.requestWithSign('GET', 'YOUR_URL', '/');
-AuthService.requestWithSign('GET', 'YOUR_URL', '/', { page: 0 });
-AuthService.requestWithSign('POST', 'YOUR_URL', '/', {}, { mock: 'MOCK_VALUE' });
+AuthService.request('GET', 'YOUR_URL', '/');
+AuthService.request('GET', 'YOUR_URL', '/', { page: 0 });
+AuthService.request('POST', 'YOUR_URL', '/', {}, { mock: 'MOCK_VALUE' });
+```
+
+#### requestWithCredentials()
+내부에서 `getCredentials()`을 호출 후 `request()` 진행
+
+```typescript
+AuthService.requestWithCredentials('GET', 'YOUR_URL', '/');
+AuthService.requestWithCredentials('GET', 'YOUR_URL', '/', { page: 0 });
+AuthService.requestWithCredentials('POST', 'YOUR_URL', '/', {}, { mock: 'MOCK_VALUE' });
 ```
 
 #### logout()

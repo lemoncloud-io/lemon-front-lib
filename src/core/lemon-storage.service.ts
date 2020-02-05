@@ -26,7 +26,7 @@ export class LemonStorageService extends LocalStorageService {
         const expiredTime = this.getItem('expiredTime');
         const now = new Date().getTime().toString();
 
-        if (now > expiredTime) {
+        if (now < expiredTime) {
             return false;
         }
         return true;

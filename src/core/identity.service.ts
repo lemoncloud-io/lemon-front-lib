@@ -6,6 +6,7 @@ import { UtilsService } from '../helper/services/utils.service';
 import { SignedHttpService } from '../helper/services/signed-http.service';
 
 // types
+import { SignaturePayload } from '../helper/services/utils.service';
 import { RequiredHttpParameters } from '../helper/services/signed-http.service';
 import { LemonCredentials, LemonOAuthTokenResult, LemonRefreshTokenResult } from '../helper';
 
@@ -14,21 +15,21 @@ export class IdentityService {
     private oauthURL: string = 'http://localhost:8086';
 
     private lemonStorage: LemonStorageService;
-    private utilsService: UtilsService;
+    private utils: UtilsService;
 
     constructor(oauthURL?: string) {
         if (oauthURL) {
             this.oauthURL = oauthURL;
         }
         this.lemonStorage = new LemonStorageService();
-        this.utilsService = new UtilsService();
+        this.utils= new UtilsService();
 
         this.checkCachedToken()
             .then(result => {
                 console.log('checkCachedToken: ', result);
             })
             .catch(err => {
-                console.log('checkCachedToken: ' , err);
+                console.log('error checkCachedToken: ' , err);
                 this.lemonStorage.clearLemonOAuthToken();
             });
     }
@@ -58,6 +59,15 @@ export class IdentityService {
             const httpService = new SignedHttpService();
             return httpService.request(endpoint, objParams);
         });
+    }
+
+    simpleRequest(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
+        const queryParams = { ...params };
+        const bodyReq = body && typeof body === 'object' ? JSON.stringify(body) : body;
+        const objParams: RequiredHttpParameters = { method, path, queryParams, bodyReq };
+
+        const httpService = new SignedHttpService();
+        return httpService.request(endpoint, objParams);
     }
 
     getCredentials(): Promise<AWS.Credentials | null> {
@@ -111,19 +121,20 @@ export class IdentityService {
         return new Promise((resolve, reject) => {
             if (!this.lemonStorage.hasCachedToken()) {
                 this.lemonStorage.clearLemonOAuthToken();
-                resolve('cleared!');
+                return resolve('cleared!');
             }
 
             if (this.lemonStorage.shouldRefreshToken()) {
-                this.refreshCachedToken()
+                console.log('shouldRefreshCachedToken');
+                return this.refreshCachedToken()
                     .then(() => resolve('refreshed!'))
                     .catch(err => reject(err));
-            } else {
-                // build AWS token
-                const credential = this.lemonStorage.getCachedCredentialItems();
-                this.createAWSCredentials(credential);
-                resolve('build credential!');
             }
+
+            // build AWS token
+            const credential = this.lemonStorage.getCachedCredentialItems();
+            this.createAWSCredentials(credential);
+            return resolve('build credential!');
         });
     }
 
@@ -131,11 +142,13 @@ export class IdentityService {
         const originToken: LemonOAuthTokenResult = this.lemonStorage.getCachedLemonOAuthToken();
         const { authId: originAuthId, accountId, identityId, identityToken, identityPoolId } = originToken;
 
+        const payload: SignaturePayload = { authId: originAuthId, accountId, identityId, identityToken };
         const current = new Date().toISOString();
-        const signature = this.utilsService.calcSignature(originAuthId, accountId, identityId, identityToken, current);
+        const signature = this.utils.calcSignature(payload, current);
 
         // $ http POST :8086/oauth/auth001/refresh 'current=2020-02-03T08:02:37.468Z' 'signature='
-        return this.requestWithSign('POST', this.oauthURL, `/oauth/${originAuthId}/refresh`, {}, { current, signature })
+        // requestWithSign()의 경우, 내부에서 getCredential() 호출하기 때문에 recursive 발생함
+        return this.simpleRequest('POST', this.oauthURL, `/oauth/${originAuthId}/refresh`, {}, { current, signature })
             .then((result: LemonRefreshTokenResult) => {
                 console.log('LemonRefreshToken result: ', result);
                 const { authId, accountId, identityId, credential } = result;

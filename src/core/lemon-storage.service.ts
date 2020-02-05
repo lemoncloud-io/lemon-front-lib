@@ -13,7 +13,7 @@ export class LemonStorageService extends LocalStorageService {
         super('LEMON_CREDENTIAL');
     }
 
-    public hasCachedToken(): boolean {
+    hasCachedToken(): boolean {
         const accessKeyId = this.getItem('accessKeyId');
         const secretKey = this.getItem('secretKey');
         const expiredTime = this.getItem('expiredTime');
@@ -22,7 +22,7 @@ export class LemonStorageService extends LocalStorageService {
         return hasToken ? true : false;
     }
 
-    public shouldRefreshToken(): boolean {
+    shouldRefreshToken(): boolean {
         const expiredTime = this.getItem('expiredTime');
         const now = new Date().getTime().toString();
 
@@ -32,26 +32,14 @@ export class LemonStorageService extends LocalStorageService {
         return true;
     }
 
-    public hasValidToken() {
-        const hasCachedToken = this.hasCachedToken();
-        if (!hasCachedToken) {
-            return false;
-        }
-        const shouldRefreshToken = this.shouldRefreshToken();
-        if (shouldRefreshToken) {
-            return false;
-        }
-        return true;
-    }
-
-    public getCachedCredentialItems(): LemonCredentials {
+    getCachedCredentialItems(): LemonCredentials {
         const AccessKeyId = this.getItem('accessKeyId');
         const SecretKey = this.getItem('secretKey');
         const SessionToken = this.getItem('sessionToken');
         return { AccessKeyId, SecretKey, SessionToken };
     }
 
-    public getCachedLemonOAuthToken(): LemonOAuthTokenResult {
+    getCachedLemonOAuthToken(): LemonOAuthTokenResult {
         const result: any = {};
         this.credentialItemList.map(item => {
             result[item] = this.getItem(item);
@@ -70,7 +58,7 @@ export class LemonStorageService extends LocalStorageService {
         return result;
     }
 
-    public saveLemonOAuthToken(token: LemonOAuthTokenResult) {
+    saveLemonOAuthToken(token: LemonOAuthTokenResult): void {
         const { accountId, authId, credential, identityId, identityPoolId, identityToken } = token;
         const { AccessKeyId, SecretKey, SessionToken } = credential;
 
@@ -86,6 +74,7 @@ export class LemonStorageService extends LocalStorageService {
         this.setItem('secretKey', SecretKey);
         this.setItem('sessionToken', SessionToken);
 
+        // set expired time
         const TIME_DELAY = 0.5; // 0.5 = 30minutes, 1 = 1hour
         const expiredTime = new Date().getTime() + (TIME_DELAY * 60 * 60 * 1000); // 30 minutes
         this.setItem('expiredTime', expiredTime.toString());
@@ -93,7 +82,7 @@ export class LemonStorageService extends LocalStorageService {
         return;
     }
 
-    public clearLemonOAuthToken() {
+    clearLemonOAuthToken(): void {
         this.credentialItemList.map(item => this.removeItem(`${item}`));
         return;
     }

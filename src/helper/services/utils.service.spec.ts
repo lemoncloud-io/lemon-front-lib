@@ -1,4 +1,5 @@
-import { UtilsService } from './utils.service';
+import { SignaturePayload, UtilsService } from './utils.service';
+import SpyInstance = jest.SpyInstance;
 
 describe('UtilsService', () => {
 
@@ -8,27 +9,15 @@ describe('UtilsService', () => {
         utilsService = new UtilsService();
     });
 
-    it('hmac()', async () => {
-        const calcSignature = (authId: string, accountId: string, identityId: string, identityToken: string, userAgent: string) => {
-            const current = new Date(1580716957468).toISOString();
-
-            //! build payload to sign......
-            const data = [current, accountId, identityId, identityToken, userAgent].join('&');
-            //! make signature with auth-id
-            const hmac = (data: string, sig: string) => utilsService.hmac(data, sig);
-            const signature = hmac(hmac(hmac(data, authId), accountId), identityId);
-            //! returns signature..........
-            // return new Buffer(signature).toString('base64');
-            return signature;
-        };
-
-        //! from dummy...
-        const context = {};
+    it('calcSignature()', async () => {
+        //! lemon-account-api
+        //! expect2(() => service.$auth.calcSignature({ ...$auth, id:authId })).toEqual('3KGbSFllLjSjrDORGq2uj8RHpKLabrNT6hKa429lP7M=');
         const accountId = 'imweb:lemonplus:steve@lemoncloud.io';
         const identityId = 'ap-northeast-2:f3bbc501-9a5f-4966-9d48-ca9585bb7594';                       // fixed! see DummyCognitoService()
         const authId = 'auth001';                                                                       // instant auth-id.
+        const current = new Date(1580716957468).toISOString();
         const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.146 Whale/2.6.89.9 Safari/537.36';
-        const $token = {
+        const token = {
             "!": "/oauth/imweb/authorize @30 Jan 2020 14:20:32 GMT",
             "accountId": "imweb:lemonplus:steve@lemoncloud.io",
             "identityPoolId": "ap-northeast-2:618ce9d2-3ad6-49df-b3b3-e248ea51425e",
@@ -41,9 +30,16 @@ describe('UtilsService', () => {
                 "Expiration": "2020-01-30T15:20:32.000Z"
             }
         };
-        //! lemon-account-api
-        //! expect2(() => service.$auth.calcSignature({ ...$auth, id:authId })).toEqual('3KGbSFllLjSjrDORGq2uj8RHpKLabrNT6hKa429lP7M=');
-        expect(calcSignature(authId, accountId, identityId, $token.identityToken, userAgent)).toEqual('3KGbSFllLjSjrDORGq2uj8RHpKLabrNT6hKa429lP7M=');
+
+        const payload: SignaturePayload = { authId, accountId, identityId, identityToken: token.identityToken };
+        const signature = utilsService.calcSignature(payload, current, userAgent);
+        expect(signature).toEqual('3KGbSFllLjSjrDORGq2uj8RHpKLabrNT6hKa429lP7M=');
+    });
+
+    it('hmac() should be called on calcSignature()', async () => {
+        const spyHmac: SpyInstance = jest.spyOn(UtilsService.prototype as any, 'hmac');
+        utilsService.calcSignature({ authId: '', accountId: '', identityId: '', identityToken: ''});
+        expect(spyHmac).toHaveBeenCalled();
     });
 
 });

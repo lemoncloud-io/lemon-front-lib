@@ -1,9 +1,16 @@
 import * as CryptoJS from 'crypto-js';
 
+export interface SignaturePayload {
+    authId: string;
+    accountId: string;
+    identityId: string;
+    identityToken: string;
+}
+
 export class UtilsService {
 
-    calcSignature(authId: string, accountId: string, identityId: string, identityToken: string, current: string = new Date().toISOString()) {
-        const userAgent = navigator.userAgent;
+    calcSignature(payload: SignaturePayload, current: string = new Date().toISOString(), userAgent: string = navigator.userAgent) {
+        const { authId, accountId, identityId, identityToken } = payload;
         //! build payload to sign......
         const data = [current, accountId, identityId, identityToken, userAgent].join('&');
         //! make signature with auth-id

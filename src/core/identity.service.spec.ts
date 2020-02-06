@@ -44,7 +44,7 @@ describe('IdentityService', () => {
     let identityService: IdentityService;
 
     beforeEach(async () => {
-        identityService = new IdentityService();
+        identityService = new IdentityService({ oAuthEndpoint: '', project: 'LEMON' });
     });
 
     afterEach(async () => {

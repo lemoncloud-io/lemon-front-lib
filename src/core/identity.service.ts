@@ -8,7 +8,7 @@ import { SignedHttpService } from '../helper/services/signed-http.service';
 // types
 import { SignaturePayload } from '../helper/services/utils.service';
 import { RequiredHttpParameters } from '../helper/services/signed-http.service';
-import { LemonCredentials, LemonOAuthTokenResult, LemonRefreshTokenResult } from '../helper';
+import { LemonCredentials, LemonOAuthTokenResult, LemonOptions, LemonRefreshTokenResult } from '../helper';
 
 export class IdentityService {
 
@@ -17,10 +17,9 @@ export class IdentityService {
     private lemonStorage: LemonStorageService;
     private utils: UtilsService;
 
-    constructor(oauthURL?: string) {
-        if (oauthURL) {
-            this.oauthURL = oauthURL;
-        }
+    constructor(options: LemonOptions) {
+        const { project, oAuthEndpoint } = options;
+        this.oauthURL = oAuthEndpoint;
         this.lemonStorage = new LemonStorageService();
         this.utils= new UtilsService();
 

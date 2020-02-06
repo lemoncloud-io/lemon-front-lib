@@ -13,8 +13,8 @@ describe('UtilsService', () => {
         //! lemon-account-api
         //! expect2(() => service.$auth.calcSignature({ ...$auth, id:authId })).toEqual('3KGbSFllLjSjrDORGq2uj8RHpKLabrNT6hKa429lP7M=');
         const accountId = 'imweb:lemonplus:steve@lemoncloud.io';
-        const identityId = 'ap-northeast-2:f3bbc501-9a5f-4966-9d48-ca9585bb7594';                       // fixed! see DummyCognitoService()
-        const authId = 'auth001';                                                                       // instant auth-id.
+        const identityId = 'ap-northeast-2:f3bbc501-9a5f-4966-9d48-ca9585bb7594';
+        const authId = 'auth001';
         const current = new Date(1580716957468).toISOString();
         const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.146 Whale/2.6.89.9 Safari/537.36';
         const token = {
@@ -36,10 +36,10 @@ describe('UtilsService', () => {
         expect(signature).toEqual('3KGbSFllLjSjrDORGq2uj8RHpKLabrNT6hKa429lP7M=');
     });
 
-    it('hmac() should be called on calcSignature()', async () => {
+    it('hmac() should be called 3 times on calcSignature()', async () => {
         const spyHmac: SpyInstance = jest.spyOn(UtilsService.prototype as any, 'hmac');
         utilsService.calcSignature({ authId: '', accountId: '', identityId: '', identityToken: ''});
-        expect(spyHmac).toHaveBeenCalled();
+        expect(spyHmac).toHaveBeenCalledTimes(3);
     });
 
 });

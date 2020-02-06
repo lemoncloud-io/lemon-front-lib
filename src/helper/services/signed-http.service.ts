@@ -68,9 +68,9 @@ export class SignedHttpService {
             });
             const header = signedRequest && signedRequest.headers;
 
-            const isNoHeader = (header === null || header === undefined);
-            if (isNoHeader) {
-                console.log('Warning: headers is missing');
+            const hasNoHeader = (header === null || header === undefined);
+            if (hasNoHeader) {
+                console.warn('Warning: header is missing');
                 return resolve(null);
             }
             return resolve(header);
@@ -101,15 +101,15 @@ export class SignedHttpService {
     // refer: https://stackoverflow.com/a/23945027/5268806
     private extractHostname(url: string) {
         let hostname;
-        //find & remove protocol (http, ftp, etc.) and get hostname
+        // find & remove protocol (http, ftp, etc.) and get hostname
         if (url.indexOf("//") > -1) {
             hostname = url.split('/')[2];
         } else {
             hostname = url.split('/')[0];
         }
-        //find & remove port number
+        // find & remove port number
         hostname = hostname.split(':')[0];
-        //find & remove "?"
+        // find & remove "?"
         hostname = hostname.split('?')[0];
         return hostname;
     }

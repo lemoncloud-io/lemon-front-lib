@@ -1,6 +1,7 @@
 import * as AWS from 'aws-sdk/global';
 import { AxiosService } from './axios.service';
 import { sigV4Client } from './sig-v4.service';
+import { LoggerService } from '../index';
 
 export interface RequiredHttpParameters {
     method: string;
@@ -11,9 +12,13 @@ export interface RequiredHttpParameters {
 
 export class SignedHttpService {
 
-    constructor() {}
+    private logger: LoggerService;
 
-    public request(endpoint: string, allParams: RequiredHttpParameters) {
+    constructor() {
+        this.logger = new LoggerService();
+    }
+
+    request(endpoint: string, allParams: RequiredHttpParameters) {
         if (!endpoint) {
             throw new Error('@endpoint (string) is required!');
         }
@@ -45,7 +50,7 @@ export class SignedHttpService {
 
             const hasNoSignedClient = (signedClient === null || signedClient === undefined);
             if (hasNoSignedClient) {
-                console.warn('Warning: signedClient is missing => Request without signing');
+                this.logger.warn('signedClient is missing => Request without signing');
             }
             resolve(signedClient);
         });
@@ -70,7 +75,7 @@ export class SignedHttpService {
 
             const hasNoHeader = (header === null || header === undefined);
             if (hasNoHeader) {
-                console.warn('Warning: header is missing');
+                this.logger.warn('signedClient is missing => Request without signing');
                 return resolve(null);
             }
             return resolve(header);

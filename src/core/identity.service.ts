@@ -18,27 +18,23 @@ import {
 
 export class IdentityService {
 
-    private oauthURL: string = 'http://localhost:8086';
+    private oauthURL: string;
 
     private lemonStorage: LemonStorageService;
     private logger: LoggerService;
     private utils: UtilsService;
 
     constructor(options: LemonOptions) {
-        const { project, oAuthEndpoint } = options;
+        const { oAuthEndpoint } = options;
         this.oauthURL = oAuthEndpoint;
-        this.logger = new LoggerService(project);
+
+        this.logger = new LoggerService();
         this.lemonStorage = new LemonStorageService();
-        this.utils= new UtilsService();
+        this.utils = new UtilsService();
 
         this.checkCachedToken()
-            .then(result => {
-                this.logger.info('checkCachedToken: ', result);
-            })
-            .catch(err => {
-                this.lemonStorage.clearLemonOAuthToken();
-                this.logger.info('checkCachedToken: ', err);
-            });
+            .then(result => this.logger.log('checkCachedToken: ', result))
+            .catch(err => this.logger.log('checkCachedToken: ', err));
     }
 
     buildCredentialsByToken(token: LemonOAuthTokenResult): void {
@@ -124,6 +120,7 @@ export class IdentityService {
     }
 
     private checkCachedToken(): Promise<any> {
+        this.logger.log('checkCachedToken()...');
         return new Promise((resolve, reject) => {
             if (!this.lemonStorage.hasCachedToken()) {
                 return reject('has no token!');
@@ -132,13 +129,18 @@ export class IdentityService {
             if (this.lemonStorage.shouldRefreshToken()) {
                 return this.refreshCachedToken()
                     .then(() => resolve('refresh token!'))
-                    .catch(err => reject(err));
+                    .catch(err => {
+                        this.logger.error('refreshCachedToken(): ', err);
+                        this.logger.log('clear Storage...');
+                        this.lemonStorage.clearLemonOAuthToken();
+                        reject(err);
+                    });
+            } else {
+                // Build AWS credential without refresh token
+                const credential = this.lemonStorage.getCachedCredentialItems();
+                this.createAWSCredentials(credential);
+                return resolve('build credentials!');
             }
-
-            // Build AWS credential without refresh token
-            const credential = this.lemonStorage.getCachedCredentialItems();
-            this.createAWSCredentials(credential);
-            return resolve('build credentials!');
         });
     }
 

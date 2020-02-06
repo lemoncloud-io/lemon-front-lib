@@ -1,4 +1,4 @@
-# lemon-front-lib [![build status](https://github.com/lemoncloud-io/lemon-front-lib/workflows/build/badge.svg)](https://github.com/lemoncloud-io/lemon-front-lib/actions)
+# lemon-front-lib [![build status](https://github.com/lemoncloud-io/lemon-front-lib/workflows/build/badge.svg)](https://github.com/lemoncloud-io/lemon-front-lib/actions) [![npm package](https://img.shields.io/npm/v/@lemoncloud/lemon-front-lib.svg)](https://www.npmjs.com/package/@lemoncloud/lemon-front-lib)
 
 Core JS library for [Lemoncloud](https://lemoncloud.io); written by Typescript
 
@@ -14,10 +14,10 @@ $ yarn add @lemoncloud/lemon-front-lib
 
 ```typescript
 import { AuthService } from '@lemoncloud/lemon-front-lib';
-const authService = new AuthService();
 
-const OAUTH_ENDPOINT = 'http://localhost:8086'; // refresh 때 필요
-const authService = new AuthService(OAUTH_ENDPOINT);
+const oAuthEndpoint = 'http://localhost:8086'; // refresh 때 필요
+const project = 'LEMON';
+const authService = new AuthService({ project, oAuthEndpoint });
 ````
 
 ### Authentication

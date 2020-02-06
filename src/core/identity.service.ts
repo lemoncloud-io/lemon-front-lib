@@ -60,14 +60,7 @@ export class IdentityService {
     }
 
     requestWithCredentials(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
-        const queryParams = { ...params };
-        const bodyReq = body && typeof body === 'object' ? JSON.stringify(body) : body;
-        const objParams: RequiredHttpParameters = { method, path, queryParams, bodyReq };
-
-        return this.getCredentials().then(() => {
-            const httpService = new SignedHttpService();
-            return httpService.request(endpoint, objParams);
-        });
+        return this.getCredentials().then(() => this.request(method, endpoint, path, params, body));
     }
 
     getCredentials(): Promise<AWS.Credentials | null> {

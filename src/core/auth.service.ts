@@ -1,14 +1,14 @@
 import * as AWS from 'aws-sdk/global';
 
-import { LemonOAuthTokenResult } from '../helper';
+import { LemonOAuthTokenResult, LemonOptions } from '../helper';
 import { IdentityService } from './identity.service';
 
 export class AuthService {
 
     private readonly identityService: IdentityService;
 
-    constructor(oauthURL?: string) {
-        this.identityService = new IdentityService(oauthURL);
+    constructor(options: LemonOptions) {
+        this.identityService = new IdentityService(options);
     }
 
     isAuthenticated(): Promise<boolean> {

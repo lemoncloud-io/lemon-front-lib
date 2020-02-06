@@ -43,7 +43,7 @@ describe('AuthService', () => {
     let authService: AuthService;
 
     beforeEach(() => {
-        authService = new AuthService();
+        authService = new AuthService({ project: 'LEMON', oAuthEndpoint: '' });
     });
 
     it('isAuthenticated() should return false before login', async () => {

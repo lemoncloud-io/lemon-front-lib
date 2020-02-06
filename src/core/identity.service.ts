@@ -26,11 +26,11 @@ export class IdentityService {
 
         this.checkCachedToken()
             .then(result => {
-                console.log('checkCachedToken: ', result);
+                console.info('checkCachedToken: ', result);
             })
             .catch(err => {
-                console.log('error checkCachedToken: ' , err);
                 this.lemonStorage.clearLemonOAuthToken();
+                console.log('checkCachedToken: ', err);
             });
     }
 
@@ -98,20 +98,19 @@ export class IdentityService {
                     .then(() => resolve(true))
                     .catch(() => resolve(false));
             });
-        } else {
-            return new Promise(resolve => {
-                (<AWS.Credentials> AWS.config.credentials).get(error => {
-                    const isAuthenticated = error ? false : true;
-                    resolve(isAuthenticated);
-                });
-            });
         }
+
+        return new Promise(resolve => {
+            (<AWS.Credentials> AWS.config.credentials).get(error => {
+                const isAuthenticated = error ? false : true;
+                resolve(isAuthenticated);
+            });
+        });
     }
 
     logout(): Promise<boolean> {
         return new Promise(resolve => {
             AWS.config.credentials = null;
-            // remove data from localStorage
             this.lemonStorage.clearLemonOAuthToken();
             resolve(true);
         })
@@ -120,21 +119,19 @@ export class IdentityService {
     private checkCachedToken(): Promise<any> {
         return new Promise((resolve, reject) => {
             if (!this.lemonStorage.hasCachedToken()) {
-                this.lemonStorage.clearLemonOAuthToken();
-                return resolve('cleared!');
+                return reject('has no token!');
             }
 
             if (this.lemonStorage.shouldRefreshToken()) {
-                console.log('shouldRefreshCachedToken');
                 return this.refreshCachedToken()
-                    .then(() => resolve('refreshed!'))
+                    .then(() => resolve('refresh token!'))
                     .catch(err => reject(err));
             }
 
-            // build AWS token
+            // Build AWS credential without refresh token
             const credential = this.lemonStorage.getCachedCredentialItems();
             this.createAWSCredentials(credential);
-            return resolve('build credential!');
+            return resolve('build credentials!');
         });
     }
 
@@ -146,11 +143,11 @@ export class IdentityService {
         const current = new Date().toISOString();
         const signature = this.utils.calcSignature(payload, current);
 
-        // $ http POST :8086/oauth/auth001/refresh 'current=2020-02-03T08:02:37.468Z' 'signature='
-        // requestWithCredentials()의 경우, 내부에서 getCredential() 호출하기 때문에 recursive 발생함
+        //! lemon-accounts-api
+        //! $ http POST :8086/oauth/auth001/refresh 'current=2020-02-03T08:02:37.468Z' 'signature='
+        //! INFO: requestWithCredentials()의 경우, 내부에서 getCredential() 호출하기 때문에 recursive 발생함
         return this.request('POST', this.oauthURL, `/oauth/${originAuthId}/refresh`, {}, { current, signature })
             .then((result: LemonRefreshTokenResult) => {
-                console.log('LemonRefreshToken result: ', result);
                 const { authId, accountId, identityId, credential } = result;
                 const refreshToken: LemonOAuthTokenResult = { authId, accountId, identityPoolId, identityToken, identityId, credential };
                 this.lemonStorage.saveLemonOAuthToken(refreshToken);
@@ -169,7 +166,7 @@ export class IdentityService {
             const credentials = (<AWS.Credentials> AWS.config.credentials);
             credentials.get((error) => {
                 if (error) {
-                    console.log('Error on getCurrentCredentials: ', error);
+                    console.error('Error on getCurrentCredentials: ', error);
                     reject(null);
                 }
                 const awsCredentials = <AWS.Credentials> AWS.config.credentials;

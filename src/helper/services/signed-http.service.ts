@@ -43,9 +43,9 @@ export class SignedHttpService {
                 host: this.extractHostname(endpoint)
             });
 
-            const isNoSignedClient = (signedClient === null || signedClient === undefined);
-            if (isNoSignedClient) {
-                console.log('Warning: signedClient is missing -> request without header');
+            const hasNoSignedClient = (signedClient === null || signedClient === undefined);
+            if (hasNoSignedClient) {
+                console.warn('Warning: signedClient is missing => Request without signing');
             }
             resolve(signedClient);
         });

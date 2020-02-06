@@ -1,5 +1,5 @@
 // refer: https://github.com/lemoncloud-io/lemon-logger-lib
-// TODO: user @lemoncloud/lemon-logger-lib
+// TODO: use @lemoncloud/lemon-logger-lib
 import { LoggerHelperService } from './logger-helper.service';
 
 export enum LogType {

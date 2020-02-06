@@ -9,3 +9,4 @@ export * from './types/authentication-state.type';
 export * from './types/cognito.interface';
 export * from './types/forgot-password-state.type';
 export * from './types/lemon-oauth-token.type';
+export * from './types/lemon-options.type';

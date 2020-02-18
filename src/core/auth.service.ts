@@ -2,7 +2,6 @@ import * as AWS from 'aws-sdk/global';
 
 import { LemonOAuthTokenResult, LemonOptions } from '../helper';
 import { IdentityService } from './identity.service';
-import { AxiosRequestConfig } from 'axios';
 
 export class AuthService {
 
@@ -26,12 +25,12 @@ export class AuthService {
             .catch(() => null);
     }
 
-    request(method: string = 'GET', endpoint: string, path: string, params?: any, body?: any, axiosConfig?: AxiosRequestConfig): Promise<any> {
-        return this.identityService.request(method, endpoint, path, params, body, axiosConfig);
+    request(method: string = 'GET', endpoint: string, path: string, params?: any, body?: any): Promise<any> {
+        return this.identityService.request(method, endpoint, path, params, body);
     }
 
-    requestWithCredentials(method: string = 'GET', endpoint: string, path: string, params?: any, body?: any, axiosConfig?: AxiosRequestConfig): Promise<any> {
-        return this.identityService.requestWithCredentials(method, endpoint, path, params, body, axiosConfig);
+    requestWithCredentials(method: string = 'GET', endpoint: string, path: string, params?: any, body?: any): Promise<any> {
+        return this.identityService.requestWithCredentials(method, endpoint, path, params, body);
     }
 
     logout(): Promise<boolean> {

@@ -2,6 +2,7 @@ import * as AWS from 'aws-sdk/global';
 import { AxiosService } from './axios.service';
 import { sigV4Client } from './sig-v4.service';
 import { LoggerService } from '../index';
+import { AxiosRequestConfig } from 'axios';
 
 export interface RequiredHttpParameters {
     method: string;
@@ -18,7 +19,7 @@ export class SignedHttpService {
         this.logger = new LoggerService();
     }
 
-    request(endpoint: string, allParams: RequiredHttpParameters) {
+    request(endpoint: string, allParams: RequiredHttpParameters, axiosConfig: AxiosRequestConfig = {}) {
         if (!endpoint) {
             throw new Error('@endpoint (string) is required!');
         }
@@ -28,7 +29,7 @@ export class SignedHttpService {
 
         return this.getSignedClient(endpoint)
             .then(signedClient => this.getSignedHeader(signedClient, allParams))
-            .then(header => this.executeRequest(header, endpoint, allParams));
+            .then(header => this.executeRequest(header, endpoint, allParams, axiosConfig));
     }
 
     private getSignedClient(endpoint: string): Promise<any> {
@@ -82,11 +83,11 @@ export class SignedHttpService {
         });
     }
 
-    private executeRequest(header: any, endpoint: string, objParams: RequiredHttpParameters) {
+    private executeRequest(header: any, endpoint: string, objParams: RequiredHttpParameters, axiosConfig: AxiosRequestConfig = {}) {
         // execute http request.
         const { method, path, queryParams, bodyReq } = objParams;
 
-        const headers = header ? header : { 'Content-Type': 'application/json' };
+        const headers = header ? { ...header, ...axiosConfig } : { 'Content-Type': 'application/json', ...axiosConfig };
         const axiosService = new AxiosService({ headers });
         switch (method.toUpperCase()) {
             case 'POST':

@@ -87,7 +87,7 @@ export class SignedHttpService {
         // execute http request.
         const { method, path, queryParams, bodyReq } = objParams;
 
-        const headers = header ? { ...header, ...axiosConfig } : { 'Content-Type': 'application/json', ...axiosConfig };
+        const headers = header ? { ...axiosConfig, ...header } : { ...axiosConfig, 'Content-Type': 'application/json' };
         const axiosService = new AxiosService({ headers });
         switch (method.toUpperCase()) {
             case 'POST':

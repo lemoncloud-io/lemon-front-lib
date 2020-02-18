@@ -66,8 +66,8 @@ export class IdentityService {
         return httpService.request(endpoint, objParams, axiosConfig);
     }
 
-    requestWithCredentials(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
-        return this.getCredentials().then(() => this.request(method, endpoint, path, params, body));
+    requestWithCredentials(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any, axiosConfig?: AxiosRequestConfig): Promise<any> {
+        return this.getCredentials().then(() => this.request(method, endpoint, path, params, body, axiosConfig));
     }
 
     getCredentials(): Promise<AWS.Credentials | null> {

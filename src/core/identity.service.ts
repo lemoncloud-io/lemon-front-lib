@@ -20,15 +20,16 @@ export class IdentityService {
 
     private oauthURL: string;
 
-    private lemonStorage: LemonStorageService;
-    private logger: LoggerService;
-    private utils: UtilsService;
+    private readonly lemonStorage: LemonStorageService;
+    private readonly logger: LoggerService;
+    private readonly utils: UtilsService;
 
     constructor(options: LemonOptions) {
+        this.logger = new LoggerService('IDS');
+        this.logger.log('initialize IdentityService(IDS)');
+
         const { oAuthEndpoint } = options;
         this.oauthURL = oAuthEndpoint;
-
-        this.logger = new LoggerService();
         this.lemonStorage = new LemonStorageService();
         this.utils = new UtilsService();
 
@@ -38,6 +39,8 @@ export class IdentityService {
     }
 
     buildCredentialsByToken(token: LemonOAuthTokenResult): void {
+        this.logger.log('buildCredentialsByToken()...');
+
         const { credential } = token;
         const { AccessKeyId, SecretKey } = credential;
         if (!AccessKeyId) {
@@ -77,7 +80,6 @@ export class IdentityService {
             return this.refreshCachedToken().then(() => this.getCurrentCredentials())
         }
 
-        this.logger.info('create AWS credential from cached data');
         const credentials = (<AWS.Credentials> AWS.config.credentials);
         const shouldRefresh = credentials.needsRefresh();
         if (shouldRefresh) {
@@ -119,7 +121,7 @@ export class IdentityService {
         })
     }
 
-    private checkCachedToken(): Promise<any> {
+    private checkCachedToken(): Promise<string> {
         this.logger.log('checkCachedToken()...');
         return new Promise((resolve, reject) => {
             if (!this.lemonStorage.hasCachedToken()) {
@@ -144,8 +146,9 @@ export class IdentityService {
         });
     }
 
+
     private refreshCachedToken() {
-        this.logger.log('refreshCachedToken()');
+        this.logger.log('refreshCachedToken()...');
         const originToken: LemonOAuthTokenResult = this.lemonStorage.getCachedLemonOAuthToken();
         const { authId: originAuthId, accountId, identityId, identityToken, identityPoolId } = originToken;
 
@@ -153,17 +156,16 @@ export class IdentityService {
         const current = new Date().toISOString();
         const signature = this.utils.calcSignature(payload, current);
 
-        this.logger.log('current: ', current);
-        this.logger.log('signature: ', signature);
         //! lemon-accounts-api
         //! $ http POST :8086/oauth/auth001/refresh 'current=2020-02-03T08:02:37.468Z' 'signature='
         //! INFO: requestWithCredentials()의 경우, 내부에서 getCredential() 호출하기 때문에 recursive 발생함
+        this.logger.log('request refresh to OAUTH API');
         return this.request('POST', this.oauthURL, `/oauth/${originAuthId}/refresh`, {}, { current, signature })
             .then((result: LemonRefreshTokenResult) => {
                 const { authId, accountId, identityId, credential } = result;
                 const refreshToken: LemonOAuthTokenResult = { authId, accountId, identityPoolId, identityToken, identityId, credential };
                 this.lemonStorage.saveLemonOAuthToken(refreshToken);
-                this.logger.log('create new Credentials after request refresh');
+                this.logger.log('create new credentials after refresh token');
                 this.createAWSCredentials(credential);
                 return result;
             });
@@ -182,6 +184,7 @@ export class IdentityService {
                     this.logger.error('Error on getCurrentCredentials: ', error);
                     reject(null);
                 }
+                this.logger.info('success to get AWS credentials');
                 const awsCredentials = <AWS.Credentials> AWS.config.credentials;
                 resolve(awsCredentials);
             });

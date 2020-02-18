@@ -15,6 +15,7 @@ import {
     LemonRefreshTokenResult,
     LoggerService,
 } from '../helper';
+import { AxiosRequestConfig } from 'axios';
 
 export class IdentityService {
 
@@ -56,13 +57,13 @@ export class IdentityService {
         this.createAWSCredentials(credential);
     }
 
-    request(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
+    request(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any, axiosConfig?: AxiosRequestConfig): Promise<any> {
         const queryParams = { ...params };
         const bodyReq = body && typeof body === 'object' ? JSON.stringify(body) : body;
         const objParams: RequiredHttpParameters = { method, path, queryParams, bodyReq };
 
         const httpService = new SignedHttpService();
-        return httpService.request(endpoint, objParams);
+        return httpService.request(endpoint, objParams, axiosConfig);
     }
 
     requestWithCredentials(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {

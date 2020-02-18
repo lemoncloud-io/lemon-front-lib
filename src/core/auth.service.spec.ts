@@ -87,10 +87,9 @@ describe('AuthService', () => {
         const path = '/';
         const param = {};
         const body = {};
-        const config = {};
 
-        await expect(authService.request(method, endpoint, path, param, body, config)).rejects.toThrowError();
-        expect(spyRequest).toHaveBeenCalledWith(method, endpoint, path, param, body, config);
+        await expect(authService.request(method, endpoint, path, param, body)).rejects.toThrowError();
+        expect(spyRequest).toHaveBeenCalledWith(method, endpoint, path, param, body);
     });
 
     it('requestWithCredentials() should call requestWithCredentials on IdentityService', async () => {
@@ -101,9 +100,8 @@ describe('AuthService', () => {
         const path = '/';
         const param = {};
         const body = {};
-        const config = {};
 
-        await expect(authService.requestWithCredentials(method, endpoint, path, param, body, config)).rejects.toThrowError();
-        expect(spyRequestWithCredentials).toHaveBeenCalledWith(method, endpoint, path, param, body, config);
+        await expect(authService.requestWithCredentials(method, endpoint, path, param, body)).rejects.toThrowError();
+        expect(spyRequestWithCredentials).toHaveBeenCalledWith(method, endpoint, path, param, body);
     });
 });

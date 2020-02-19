@@ -1,7 +1,9 @@
 import * as AWS from 'aws-sdk/global';
+
 import { AxiosService } from './axios.service';
-import { sigV4Client } from './sig-v4.service';
-import { LoggerService } from '../index';
+import { LoggerService } from './logger.service';
+
+import { sigV4Client } from '../../vendor/sig-v4.service';
 
 export interface RequiredHttpParameters {
     method: string;

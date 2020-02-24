@@ -10,10 +10,7 @@ export interface SignaturePayload {
 export class UtilsService {
 
     calcSignature(payload: SignaturePayload, current: string = new Date().toISOString(), userAgent: string = navigator.userAgent) {
-        const authId = `${payload.authId || ''}`;
-        const accountId = `${payload.accountId || ''}`;
-        const identityId = `${payload.identityId || ''}`;
-        const identityToken = `${payload.identityToken || ''}`;
+        const { authId, accountId, identityId, identityToken } = payload;
 
         //! build payload to sign......
         const data = [current, accountId, identityId, identityToken, userAgent].join('&');

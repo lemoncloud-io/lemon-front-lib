@@ -19,6 +19,7 @@ import {
 export class IdentityService {
 
     private oauthURL: string;
+    private extraHeader: any = {};
 
     private readonly lemonStorage: LemonStorageService;
     private readonly logger: LoggerService;
@@ -28,8 +29,9 @@ export class IdentityService {
         this.logger = new LoggerService('IDS');
         this.logger.log('initialize IdentityService(IDS)');
 
-        const { oAuthEndpoint } = options;
+        const { oAuthEndpoint, extraHeader } = options;
         this.oauthURL = oAuthEndpoint;
+        this.extraHeader = extraHeader ? extraHeader : {};
         this.lemonStorage = new LemonStorageService();
         this.utils = new UtilsService();
 
@@ -61,7 +63,8 @@ export class IdentityService {
         const bodyReq = body && typeof body === 'object' ? JSON.stringify(body) : body;
         const objParams: RequiredHttpParameters = { method, path, queryParams, bodyReq };
 
-        const httpService = new SignedHttpService();
+        const options = { customHeader: this.extraHeader };
+        const httpService = new SignedHttpService(options);
         return httpService.request(endpoint, objParams);
     }
 

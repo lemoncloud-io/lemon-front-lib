@@ -2,10 +2,12 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosPromise, Method, AxiosRe
 
 export class AxiosService {
 
+    private options: AxiosRequestConfig;
     private axiosInstance: AxiosInstance;
 
-    constructor(private options: AxiosRequestConfig = {}) {
-        this.axiosInstance = axios.create(options);
+    constructor(private requestOptions: AxiosRequestConfig = {}) {
+        this.options = requestOptions;
+        this.axiosInstance = axios.create();
     }
 
     public get<T>(url: string, queryParams?: object) {
@@ -33,19 +35,19 @@ export class AxiosService {
 
         switch (method) {
             case 'GET':
-                request = this.axiosInstance.get<T>(url, { params: queryParams });
+                request = this.axiosInstance.get<T>(url, { params: queryParams, ...this.options });
                 break;
             case 'POST':
-                request = this.axiosInstance.post<T>(url, body, { params: queryParams });
+                request = this.axiosInstance.post<T>(url, body, { params: queryParams, ...this.options });
                 break;
             case 'PUT':
-                request = this.axiosInstance.put<T>(url, body, { params: queryParams });
+                request = this.axiosInstance.put<T>(url, body, { params: queryParams, ...this.options });
                 break;
             case 'PATCH':
-                request = this.axiosInstance.patch<T>(url, body, { params: queryParams });
+                request = this.axiosInstance.patch<T>(url, body, { params: queryParams, ...this.options });
                 break;
             case 'DELETE':
-                request = this.axiosInstance.delete(url, { params: queryParams });
+                request = this.axiosInstance.delete(url, { params: queryParams, ...this.options });
                 break;
             default:
                 throw new Error('Method not supported');

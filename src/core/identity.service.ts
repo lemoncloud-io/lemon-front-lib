@@ -40,6 +40,12 @@ export class IdentityService {
             .catch(err => this.logger.log('checkCachedToken: ', err));
     }
 
+    setOptions(options: LemonOptions) {
+        const { oAuthEndpoint, extraHeader } = options;
+        this.oauthURL = oAuthEndpoint;
+        this.extraHeader = extraHeader ? extraHeader : {};
+    }
+
     buildCredentialsByToken(token: LemonOAuthTokenResult): void {
         this.logger.log('buildCredentialsByToken()...');
 

@@ -11,6 +11,10 @@ export class AuthService {
         this.identityService = new IdentityService(options);
     }
 
+    setLemonOptions(options: LemonOptions) {
+        this.identityService.setOptions(options);
+    }
+
     isAuthenticated(): Promise<boolean> {
         return this.identityService.isAuthenticated();
     }

@@ -14,16 +14,19 @@ export interface RequiredHttpParameters {
 
 export interface SignedHttpOptions {
     customHeader?: any;
+    customOptions?: any;
 }
 
 export class SignedHttpService {
 
     private customHeader: any;
+    private customOptions: any;
     private logger: LoggerService;
 
     constructor(options: SignedHttpOptions = {}) {
-        const { customHeader } = options;
+        const { customHeader, customOptions } = options;
         this.customHeader = customHeader ? { 'Content-Type': 'application/json', ...customHeader } : { 'Content-Type': 'application/json' };
+        this.customOptions = customOptions ? { ...customOptions } : {};
         this.logger = new LoggerService();
     }
 
@@ -95,7 +98,7 @@ export class SignedHttpService {
         // execute http request.
         const { method, path, queryParams, bodyReq } = objParams;
         const headers = header ? { ...header, ...this.customHeader } : { ...this.customHeader };
-        const axiosService = new AxiosService({ headers });
+        const axiosService = new AxiosService({ headers, ...this.customOptions });
         switch (method.toUpperCase()) {
             case 'POST':
                 return axiosService.post(endpoint + path, bodyReq, queryParams);

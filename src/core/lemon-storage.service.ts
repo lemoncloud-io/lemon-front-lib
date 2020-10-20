@@ -1,5 +1,4 @@
-import { LemonCredentials, LemonOAuthTokenResult } from '../helper/types/lemon-oauth-token.type';
-import { LocalStorageService } from '../helper/services/storage.service';
+import { LemonCredentials, LemonOAuthTokenResult, LocalStorageService } from '../helper';
 
 export class LemonStorageService extends LocalStorageService {
 
@@ -9,8 +8,8 @@ export class LemonStorageService extends LocalStorageService {
         'secretKey', 'sessionToken', 'expiredTime'
     ];
 
-    constructor() {
-        super('LEMON_CREDENTIAL');
+    constructor(private project: string = 'lemon') {
+        super(`${project}_LEMON_CREDENTIAL`);
     }
 
     hasCachedToken(): boolean {
@@ -19,17 +18,14 @@ export class LemonStorageService extends LocalStorageService {
         const expiredTime = this.getItem('expiredTime');
 
         const hasToken = accessKeyId !== null && secretKey !== null && expiredTime !== null;
-        return hasToken ? true : false;
+        return hasToken;
     }
 
     shouldRefreshToken(): boolean {
         const expiredTime = this.getItem('expiredTime');
         const now = new Date().getTime().toString();
 
-        if (now < expiredTime) {
-            return false;
-        }
-        return true;
+        return now >= expiredTime;
     }
 
     getCachedCredentialItems(): LemonCredentials {

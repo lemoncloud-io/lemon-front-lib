@@ -2,12 +2,10 @@ import * as AWS from 'aws-sdk/global';
 
 // services
 import { LemonStorageService } from './lemon-storage.service';
-import { UtilsService } from '../helper/services/utils.service';
-import { SignedHttpService } from '../helper/services/signed-http.service';
+import { UtilsService, SignedHttpService } from '../helper';
 
 // types
-import { SignaturePayload } from '../helper/services/utils.service';
-import { RequiredHttpParameters } from '../helper/services/signed-http.service';
+import { SignaturePayload, RequiredHttpParameters } from '../helper';
 import {
     LemonCredentials,
     LemonOAuthTokenResult,
@@ -31,7 +29,8 @@ export class IdentityService {
         this.logger.log('initialize IdentityService(IDS)');
 
         this.setExtraData(options);
-        this.lemonStorage = new LemonStorageService();
+        const { project } = options;
+        this.lemonStorage = new LemonStorageService(project);
         this.utils = new UtilsService();
 
         this.checkCachedToken()

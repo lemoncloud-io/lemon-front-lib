@@ -1,49 +1,60 @@
 import { LemonCredentials, LemonOAuthTokenResult, LocalStorageService } from '../helper';
 
-export class LemonStorageService extends LocalStorageService {
+export interface Storage {
+    getItem(key: string, ...params: any): any;
+    setItem(key: string, value: string, ...params: any): any;
+    removeItem(key: string, ...params: any): any;
+}
+
+export class LemonStorageService {
 
     private credentialItemList = [
         'accountId', 'authId', 'identityId',
         'identityPoolId', 'identityToken', 'accessKeyId',
         'secretKey', 'sessionToken', 'expiredTime'
     ];
+    private prefix: string;
+    private storageService: Storage;
 
-    constructor(private project: string = 'lemon') {
-        super(`${project}_LEMON_CREDENTIAL`);
+    constructor(private project: string = 'lemon',
+                private storage: Storage = new LocalStorageService(project)) {
+        this.prefix = `@${project}_LEMON_CREDENTIAL`;
+        this.storageService = storage;
     }
 
-    hasCachedToken(): boolean {
-        const accessKeyId = this.getItem('accessKeyId');
-        const secretKey = this.getItem('secretKey');
-        const expiredTime = this.getItem('expiredTime');
+    async hasCachedToken(): Promise<boolean> {
+        const accessKeyId = await this.storageService.getItem(`${this.prefix}.accessKeyId`);
+        const secretKey = await this.storageService.getItem(`${this.prefix}.secretKey`);
+        const expiredTime = await this.storageService.getItem(`${this.prefix}.expiredTime`);
 
         const hasToken = accessKeyId !== null && secretKey !== null && expiredTime !== null;
         return hasToken;
     }
 
-    shouldRefreshToken(): boolean {
-        const expiredTime = this.getItem('expiredTime');
+    async shouldRefreshToken(): Promise<boolean> {
+        const expiredTime = await this.storageService.getItem(`${this.prefix}.expiredTime`);
         const now = new Date().getTime().toString();
 
         return now >= expiredTime;
     }
 
-    getCachedCredentialItems(): LemonCredentials {
-        const AccessKeyId = this.getItem('accessKeyId');
-        const SecretKey = this.getItem('secretKey');
-        const SessionToken = this.getItem('sessionToken');
-        return { AccessKeyId, SecretKey, SessionToken };
+    async getCachedCredentialItems(): Promise<LemonCredentials> {
+        const AccessKeyId = await this.storageService.getItem(`${this.prefix}.accessKeyId`);
+        const SecretKey = await this.storageService.getItem(`${this.prefix}.secretKey`);
+        const SessionToken = await this.storageService.getItem(`${this.prefix}.sessionToken`);
+        return { AccessKeyId, SecretKey, SessionToken } as LemonCredentials;
     }
 
-    getCachedLemonOAuthToken(): LemonOAuthTokenResult {
-        const result: any = {};
-        this.credentialItemList.map(item => {
-            result[item] = this.getItem(item);
-        });
+    async getCachedLemonOAuthToken(): Promise<LemonOAuthTokenResult> {
+        const result = await this.credentialItemList.reduce(async (promise, item) => {
+            let tmpResult: any = await promise.then();
+            tmpResult[item] = await this.storageService.getItem(`${this.prefix}.${item}`);
+            return Promise.resolve(tmpResult);
+        }, Promise.resolve({}));
 
-        const AccessKeyId = this.getItem('accessKeyId');
-        const SecretKey = this.getItem('secretKey');
-        const SessionToken = this.getItem('sessionToken');
+        const AccessKeyId = await this.storageService.getItem(`${this.prefix}.accessKeyId`);
+        const SecretKey = await this.storageService.getItem(`${this.prefix}.secretKey`);
+        const SessionToken = await this.storageService.getItem(`${this.prefix}.sessionToken`);
         result.credential = { AccessKeyId, SecretKey, SessionToken };
 
         delete result.accessKeyId;
@@ -54,32 +65,32 @@ export class LemonStorageService extends LocalStorageService {
         return result;
     }
 
-    saveLemonOAuthToken(token: LemonOAuthTokenResult): void {
+    async saveLemonOAuthToken(token: LemonOAuthTokenResult): Promise<void> {
         const { accountId, authId, credential, identityId, identityPoolId, identityToken } = token;
         const { AccessKeyId, SecretKey, SessionToken } = credential;
 
         // save items...
-        this.setItem('accountId', accountId);
-        this.setItem('authId', authId);
-        this.setItem('identityId', identityId);
-        this.setItem('identityPoolId', identityPoolId);
-        this.setItem('identityToken', identityToken);
+        this.storageService.setItem(`${this.prefix}.accountId`, accountId);
+        this.storageService.setItem(`${this.prefix}.authId`, authId);
+        this.storageService.setItem(`${this.prefix}.identityId`, identityId);
+        this.storageService.setItem(`${this.prefix}.identityPoolId`, identityPoolId);
+        this.storageService.setItem(`${this.prefix}.identityToken`, identityToken);
 
         // credential for AWS
-        this.setItem('accessKeyId', AccessKeyId);
-        this.setItem('secretKey', SecretKey);
-        this.setItem('sessionToken', SessionToken);
+        this.storageService.setItem(`${this.prefix}.accessKeyId`, AccessKeyId);
+        this.storageService.setItem(`${this.prefix}.secretKey`, SecretKey);
+        this.storageService.setItem(`${this.prefix}.sessionToken`, SessionToken);
 
         // set expired time
         const TIME_DELAY = 0.5; // 0.5 = 30minutes, 1 = 1hour
         const expiredTime = new Date().getTime() + (TIME_DELAY * 60 * 60 * 1000); // 30 minutes
-        this.setItem('expiredTime', expiredTime.toString());
+        this.storageService.setItem(`${this.prefix}.expiredTime`, expiredTime.toString());
 
         return;
     }
 
-    clearLemonOAuthToken(): void {
-        this.credentialItemList.map(item => this.removeItem(`${item}`));
+    async clearLemonOAuthToken(): Promise<void> {
+        await Promise.all(this.credentialItemList.map(item => this.storageService.removeItem(`${this.prefix}.${item}`)));
         return;
     }
 }

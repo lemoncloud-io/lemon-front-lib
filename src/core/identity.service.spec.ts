@@ -92,7 +92,9 @@ describe('IdentityService', () => {
 
         // create AWS Credentials
         await identityService.buildCredentialsByToken(customToken);
-        await expect(identityService.isAuthenticated()).toBeTruthy();
+        const result2 = await identityService.isAuthenticated();
+        expect(result2).toBeTruthy();
+        // await expect(identityService.isAuthenticated()).toBeTruthy();
         expect(spyHasCachedToken).toHaveBeenCalled();
         expect(spyShouldRefreshToken).toHaveBeenCalled();
     });

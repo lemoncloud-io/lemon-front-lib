@@ -2,13 +2,15 @@ import * as AWS from 'aws-sdk/global';
 
 import { LemonOAuthTokenResult, LemonOptions } from '../helper';
 import { IdentityService } from './identity.service';
+import { Storage } from './lemon-storage.service';
 
 export class AuthService {
 
     private readonly identityService: IdentityService;
 
-    constructor(options: LemonOptions) {
-        this.identityService = new IdentityService(options);
+    constructor(options: LemonOptions,
+                storage?: Storage) {
+        this.identityService = new IdentityService(options, storage);
     }
 
     setLemonOptions(options: LemonOptions) {

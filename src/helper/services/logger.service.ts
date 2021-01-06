@@ -73,14 +73,13 @@ export class LoggerService implements LogInterface {
     }
 
     private writeLog(type: LogType, message: string) {
-        const format: FormatInterface = this.getFormat(type);
-        const formattedText = this.createLogMessage(type, message, format);
-
         if (this.isReactNative) {
-            this.logOnBrowser(type, formattedText, format);
+            console.log(message); // TODO: refactor this
             return;
         }
 
+        const format: FormatInterface = this.getFormat(type);
+        const formattedText = this.createLogMessage(type, message, format);
         if (this.isNode) {
             console.log(formattedText);
             return;

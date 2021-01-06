@@ -48,36 +48,57 @@ export class LoggerService implements LogInterface {
     }
 
     log(message: string, ...extraParams: any[]) {
+        // TODO: refactor below
+        if (this.isReactNative) {
+            console.log(message);
+            return;
+        }
         const formattedMessage = this.utils.formatMessage(message, extraParams);
         this.writeLog(LogType.DEBUG, formattedMessage);
+        return;
     }
 
     debug(message: string, ...extraParams: any[]) {
+        // TODO: refactor below
+        if (this.isReactNative) {
+            console.debug(message);
+            return;
+        }
         const formattedMessage = this.utils.formatMessage(message, extraParams);
         this.writeLog(LogType.DEBUG, formattedMessage);
     }
 
     warn(message: string, ...extraParams: any[]) {
+        // TODO: refactor below
+        if (this.isReactNative) {
+            console.warn(message);
+            return;
+        }
         const formattedMessage = this.utils.formatMessage(message, extraParams);
         this.writeLog(LogType.WARN, formattedMessage);
     }
 
     info(message: string, ...extraParams: any[]) {
+        // TODO: refactor below
+        if (this.isReactNative) {
+            console.info(message);
+            return;
+        }
         const formattedMessage = this.utils.formatMessage(message, extraParams);
         this.writeLog(LogType.INFO, formattedMessage);
     }
 
     error(message: string, ...extraParams: any[]) {
+        // TODO: refactor below
+        if (this.isReactNative) {
+            console.error(message);
+            return;
+        }
         const formattedMessage = this.utils.formatMessage(message, extraParams);
         this.writeLog(LogType.ERROR, formattedMessage);
     }
 
     private writeLog(type: LogType, message: string) {
-        if (this.isReactNative) {
-            console.log(message); // TODO: refactor this
-            return;
-        }
-
         const format: FormatInterface = this.getFormat(type);
         const formattedText = this.createLogMessage(type, message, format);
         if (this.isNode) {

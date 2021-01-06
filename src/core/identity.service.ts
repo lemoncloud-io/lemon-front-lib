@@ -24,8 +24,7 @@ export class IdentityService {
     private readonly logger: LoggerService;
     private readonly utils: UtilsService;
 
-    constructor(options: LemonOptions,
-                storage?: Storage) {
+    constructor(options: LemonOptions, storage?: Storage) {
         this.logger = new LoggerService('IDS', options);
         this.logger.log('initialize IdentityService(IDS)');
 
@@ -99,11 +98,9 @@ export class IdentityService {
 
     async isAuthenticated(): Promise<boolean> {
         const hasCachedToken = await this.lemonStorage.hasCachedToken();
-        console.log('isAuthenticated')
         if (!hasCachedToken) {
             return new Promise(resolve => resolve(false));
         }
-        console.log('hasCachedToken', hasCachedToken)
 
         const shouldRefreshToken = await this.lemonStorage.shouldRefreshToken();
         if (shouldRefreshToken) {
@@ -114,7 +111,7 @@ export class IdentityService {
                     .catch(() => resolve(false));
             });
         }
-        console.log('shouldRefreshToken', shouldRefreshToken)
+
         return new Promise(resolve => {
             (<AWS.Credentials> AWS.config.credentials).get(error => {
                 if (error) {

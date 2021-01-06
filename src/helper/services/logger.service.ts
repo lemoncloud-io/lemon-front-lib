@@ -29,6 +29,8 @@ export class LoggerService implements LogInterface {
 
     private isNode: boolean;
     private isBrowser: boolean;
+    private isReactNative: boolean;
+
     private namespace: string;
     private options = {
         showTimestamp: true,
@@ -42,6 +44,7 @@ export class LoggerService implements LogInterface {
 
         this.isNode = this.utils.isNode();
         this.isBrowser = this.utils.isBrowser();
+        this.isReactNative = !!options.isReactNative;
     }
 
     log(message: string, ...extraParams: any[]) {
@@ -72,10 +75,17 @@ export class LoggerService implements LogInterface {
     private writeLog(type: LogType, message: string) {
         const format: FormatInterface = this.getFormat(type);
         const formattedText = this.createLogMessage(type, message, format);
+
+        if (this.isReactNative) {
+            this.logOnBrowser(type, formattedText, format);
+            return;
+        }
+
         if (this.isNode) {
             console.log(formattedText);
             return;
         }
+
         // isBrowser
         this.logOnBrowser(type, formattedText, format);
         return;

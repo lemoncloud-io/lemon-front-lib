@@ -26,7 +26,7 @@ export class IdentityService {
 
     constructor(options: LemonOptions,
                 storage?: Storage) {
-        this.logger = new LoggerService('IDS');
+        this.logger = new LoggerService('IDS', options);
         this.logger.log('initialize IdentityService(IDS)');
 
         this.setExtraData(options);

@@ -29,7 +29,6 @@ export class LoggerService implements LogInterface {
 
     private isNode: boolean;
     private isBrowser: boolean;
-    private isReactNative: boolean;
 
     private namespace: string;
     private options = {
@@ -44,56 +43,30 @@ export class LoggerService implements LogInterface {
 
         this.isNode = this.utils.isNode();
         this.isBrowser = this.utils.isBrowser();
-        this.isReactNative = !!options.isReactNative;
     }
 
     log(message: string, ...extraParams: any[]) {
-        // TODO: refactor below
-        if (this.isReactNative) {
-            console.log(message);
-            return;
-        }
         const formattedMessage = this.utils.formatMessage(message, extraParams);
         this.writeLog(LogType.DEBUG, formattedMessage);
         return;
     }
 
     debug(message: string, ...extraParams: any[]) {
-        // TODO: refactor below
-        if (this.isReactNative) {
-            console.debug(message);
-            return;
-        }
         const formattedMessage = this.utils.formatMessage(message, extraParams);
         this.writeLog(LogType.DEBUG, formattedMessage);
     }
 
     warn(message: string, ...extraParams: any[]) {
-        // TODO: refactor below
-        if (this.isReactNative) {
-            console.warn(message);
-            return;
-        }
         const formattedMessage = this.utils.formatMessage(message, extraParams);
         this.writeLog(LogType.WARN, formattedMessage);
     }
 
     info(message: string, ...extraParams: any[]) {
-        // TODO: refactor below
-        if (this.isReactNative) {
-            console.info(message);
-            return;
-        }
         const formattedMessage = this.utils.formatMessage(message, extraParams);
         this.writeLog(LogType.INFO, formattedMessage);
     }
 
     error(message: string, ...extraParams: any[]) {
-        // TODO: refactor below
-        if (this.isReactNative) {
-            console.error(message);
-            return;
-        }
         const formattedMessage = this.utils.formatMessage(message, extraParams);
         this.writeLog(LogType.ERROR, formattedMessage);
     }

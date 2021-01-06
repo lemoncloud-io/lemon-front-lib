@@ -18,8 +18,16 @@ export class LemonStorageService {
 
     constructor(private project: string = 'lemon',
                 private storage: Storage = new LocalStorageService(project)) {
-        this.prefix = `@${project}_LEMON_CREDENTIAL`;
+        this.prefix = `@${project}_LEMON_STORAGE`;
         this.storageService = storage;
+    }
+
+    async setItem(key: string, value: string) {
+        return await this.storageService.setItem(`${this.prefix}.${key}`, value);
+    }
+
+    async getItem(key: string) {
+        return await this.storageService.getItem(`${this.prefix}.${key}`);
     }
 
     async hasCachedToken(): Promise<boolean> {

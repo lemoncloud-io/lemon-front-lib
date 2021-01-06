@@ -21,9 +21,9 @@ export class AuthService {
         return this.identityService.isAuthenticated();
     }
 
-    buildCredentialsByToken(token: LemonOAuthTokenResult): Promise<AWS.Credentials> {
-        this.identityService.buildCredentialsByToken(token);
-        return this.identityService.getCredentials();
+    async buildCredentialsByToken(token: LemonOAuthTokenResult): Promise<AWS.Credentials> {
+        await this.identityService.buildCredentialsByToken(token);
+        return await this.identityService.getCredentials();
     }
 
     getCredentials(): Promise<AWS.Credentials | null> {

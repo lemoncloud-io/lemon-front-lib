@@ -25,7 +25,7 @@ export class SignedHttpService {
 
     constructor(options: SignedHttpOptions = {}) {
         const { customHeader, customOptions } = options;
-        this.customHeader = customHeader ? { 'Content-Type': 'application/json', ...customHeader } : { 'Content-Type': 'application/json' };
+        this.customHeader = customHeader ? { ...customHeader } : { 'Content-Type': 'application/json' };
         this.customOptions = customOptions ? { ...customOptions } : {};
         this.logger = new LoggerService();
     }

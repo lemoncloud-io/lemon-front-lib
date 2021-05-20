@@ -117,7 +117,7 @@ export class IdentityService {
                 if (error) {
                     this.logger.error('get AWS.config.credentials error: ', error);
                 }
-                const isAuthenticated = error ? false : true;
+                const isAuthenticated = !error;
                 resolve(isAuthenticated);
             });
         });

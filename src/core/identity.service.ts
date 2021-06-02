@@ -42,6 +42,10 @@ export class IdentityService {
         this.setExtraData(options);
     }
 
+    getSavedCredentials(): Promise<{ [key: string]: string }> {
+        return this.lemonStorage.getAllItems();
+    }
+
     async buildCredentialsByToken(token: LemonOAuthTokenResult): Promise<void> {
         this.logger.log('buildCredentialsByToken()...');
 
@@ -85,10 +89,10 @@ export class IdentityService {
         const shouldRefreshToken = await this.lemonStorage.shouldRefreshToken();
         if (shouldRefreshToken) {
             this.logger.info('should refresh token!');
-            return this.refreshCachedToken().then(() => this.getCurrentCredentials())
+            return this.refreshCachedToken().then(() => this.getCurrentCredentials());
         }
 
-        const credentials = (<AWS.Credentials> AWS.config.credentials);
+        const credentials = AWS.config.credentials as AWS.Credentials;
         const shouldRefresh = credentials.needsRefresh();
         if (shouldRefresh) {
             return credentials.refreshPromise().then(() => this.getCurrentCredentials());

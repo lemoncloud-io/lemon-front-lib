@@ -13,6 +13,10 @@ export class AuthService {
         this.identityService = new IdentityService(options, storage);
     }
 
+    getSavedToken(): Promise<{ [key: string]: string }> {
+        return this.identityService.getSavedCredentials();
+    }
+
     setLemonOptions(options: LemonOptions) {
         this.identityService.setOptions(options);
     }
@@ -27,8 +31,7 @@ export class AuthService {
     }
 
     getCredentials(): Promise<AWS.Credentials | null> {
-        return this.identityService.getCredentials()
-            .catch(() => null);
+        return this.identityService.getCredentials().catch(() => null);
     }
 
     request(method: string = 'GET', endpoint: string, path: string, params?: any, body?: any): Promise<any> {

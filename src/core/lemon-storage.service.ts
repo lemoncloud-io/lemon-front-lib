@@ -30,10 +30,10 @@ export class LemonStorageService {
         return await this.storageService.getItem(`${this.prefix}.${key}`);
     }
 
-    async getAllCredentials() {
+    async getAllItems() {
         return await this.credentialItemList.reduce(async (promise, item) => {
-            let tmpResult: any = await promise.then();
-            tmpResult[item] = await this.storageService.getItem(`${this.prefix}.${item}`);
+            let tmpResult: { [key: string]: string } = await promise.then();
+            tmpResult[`${this.prefix}.${item}`] = await this.storageService.getItem(`${this.prefix}.${item}`);
             return Promise.resolve(tmpResult);
         }, Promise.resolve({}));
     }
@@ -62,7 +62,11 @@ export class LemonStorageService {
     }
 
     async getCachedLemonOAuthToken(): Promise<LemonOAuthTokenResult> {
-        const result = await this.getAllCredentials();
+        const result: any = await this.credentialItemList.reduce(async (promise, item) => {
+            let tmpResult: { [key: string]: string } = await promise.then();
+            tmpResult[item] = await this.storageService.getItem(`${this.prefix}.${item}`);
+            return Promise.resolve(tmpResult);
+        }, Promise.resolve({}));
 
         const AccessKeyId = await this.storageService.getItem(`${this.prefix}.accessKeyId`);
         const SecretKey = await this.storageService.getItem(`${this.prefix}.secretKey`);

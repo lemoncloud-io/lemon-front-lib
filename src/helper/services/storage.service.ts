@@ -1,30 +1,27 @@
 export class LocalStorageService {
 
-    public prefix: string;
     private storage: any;
 
-    constructor(prefix: string = 'lemon') {
-        this.prefix = prefix;
-
+    constructor() {
         try {
             this.storage = window.localStorage;
-            this.storage.setItem(`${this.prefix}.test-value`, 1);
-            this.storage.removeItem(`${this.prefix}.test-value`);
+            this.storage.setItem(`.test-value`, 1);
+            this.storage.removeItem(`.test-value`);
         } catch (exception) {
             this.storage = new MemoryStorage();
         }
     }
 
     public setItem(key: string, value: string) {
-        this.storage.setItem(`${this.prefix}.${key}`, value);
+        this.storage.setItem(key, value);
     }
 
     public getItem(key: string) {
-        return this.storage.getItem(`${this.prefix}.${key}`);
+        return this.storage.getItem(key);
     }
 
     public removeItem(key: string) {
-        this.storage.removeItem(`${this.prefix}.${key}`);
+        this.storage.removeItem(key);
     }
 }
 

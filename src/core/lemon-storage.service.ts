@@ -17,7 +17,7 @@ export class LemonStorageService {
     private storageService: Storage;
 
     constructor(private project: string = 'lemon',
-                private storage: Storage = new LocalStorageService(project)) {
+                private storage: Storage = new LocalStorageService()) {
         this.prefix = `@${project}_LEMON_STORAGE`;
         this.storageService = storage;
     }
@@ -28,6 +28,14 @@ export class LemonStorageService {
 
     async getItem(key: string) {
         return await this.storageService.getItem(`${this.prefix}.${key}`);
+    }
+
+    async getAllCredentials() {
+        return await this.credentialItemList.reduce(async (promise, item) => {
+            let tmpResult: any = await promise.then();
+            tmpResult[item] = await this.storageService.getItem(`${this.prefix}.${item}`);
+            return Promise.resolve(tmpResult);
+        }, Promise.resolve({}));
     }
 
     async hasCachedToken(): Promise<boolean> {
@@ -54,11 +62,7 @@ export class LemonStorageService {
     }
 
     async getCachedLemonOAuthToken(): Promise<LemonOAuthTokenResult> {
-        const result = await this.credentialItemList.reduce(async (promise, item) => {
-            let tmpResult: any = await promise.then();
-            tmpResult[item] = await this.storageService.getItem(`${this.prefix}.${item}`);
-            return Promise.resolve(tmpResult);
-        }, Promise.resolve({}));
+        const result = await this.getAllCredentials();
 
         const AccessKeyId = await this.storageService.getItem(`${this.prefix}.accessKeyId`);
         const SecretKey = await this.storageService.getItem(`${this.prefix}.secretKey`);

@@ -64,6 +64,19 @@ export class IdentityService {
         this.createAWSCredentials(credential);
     }
 
+    async buildCredentialsByStorage(): Promise<void> {
+        this.logger.log('buildCredentialsByStorage()...');
+        const credential = await this.lemonStorage.getCachedCredentialItems();
+        const { AccessKeyId, SecretKey } = credential;
+        if (!AccessKeyId) {
+            throw new Error('.AccessKeyId (string) is required!');
+        }
+        if (!SecretKey) {
+            throw new Error('.SecretKey (string) is required!');
+        }
+        this.createAWSCredentials(credential);
+    }
+
     request(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
         const queryParams = { ...params };
         // const bodyReq = body && typeof body === 'object' ? JSON.stringify(body) : body;

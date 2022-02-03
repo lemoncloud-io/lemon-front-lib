@@ -30,6 +30,11 @@ export class AuthService {
         return await this.identityService.getCredentials();
     }
 
+    async buildCredentialsByStorage(): Promise<AWS.Credentials> {
+        await this.identityService.buildCredentialsByStorage();
+        return await this.identityService.getCredentials();
+    }
+
     getCredentials(): Promise<AWS.Credentials | null> {
         return this.identityService.getCredentials().catch(() => null);
     }

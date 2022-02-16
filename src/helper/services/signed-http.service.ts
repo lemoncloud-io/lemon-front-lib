@@ -18,16 +18,19 @@ export interface SignedHttpOptions {
 }
 
 export class SignedHttpService {
-
+    private providerCredential: AWS.Credentials;
     private customHeader: any;
     private customOptions: any;
     private logger: LoggerService;
 
-    constructor(options: SignedHttpOptions = {}) {
+    constructor(options: SignedHttpOptions = {}, credentials?: AWS.Credentials) {
         const { customHeader, customOptions } = options;
         this.customHeader = customHeader ? { ...customHeader } : { 'Content-Type': 'application/json' };
         this.customOptions = customOptions ? { ...customOptions } : {};
         this.logger = new LoggerService();
+        if (credentials) {
+            this.providerCredential = credentials;
+        }
     }
 
     request(endpoint: string, allParams: RequiredHttpParameters) {
@@ -48,19 +51,32 @@ export class SignedHttpService {
             throw new Error('@endpoint (string) is required!');
         }
 
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             // prepare client
             const ok = AWS.config && AWS.config.credentials;
-            const signedClient = ok && sigV4Client.newClient({
-                accessKey: AWS.config.credentials.accessKeyId,
-                secretKey: AWS.config.credentials.secretAccessKey,
-                sessionToken: AWS.config.credentials.sessionToken,
-                region: 'ap-northeast-2',
-                endpoint: endpoint,
-                host: this.extractHostname(endpoint)
-            });
+            let signedClient =
+                ok &&
+                sigV4Client.newClient({
+                    accessKey: AWS.config.credentials.accessKeyId,
+                    secretKey: AWS.config.credentials.secretAccessKey,
+                    sessionToken: AWS.config.credentials.sessionToken,
+                    region: 'ap-northeast-2',
+                    endpoint: endpoint,
+                    host: this.extractHostname(endpoint),
+                });
 
-            const hasNoSignedClient = (signedClient === null || signedClient === undefined);
+            if (this.providerCredential) {
+                signedClient = sigV4Client.newClient({
+                    accessKey: this.providerCredential.accessKeyId,
+                    secretKey: this.providerCredential.secretAccessKey,
+                    sessionToken: this.providerCredential.sessionToken,
+                    region: 'ap-northeast-2',
+                    endpoint: endpoint,
+                    host: this.extractHostname(endpoint),
+                });
+            }
+
+            const hasNoSignedClient = signedClient === null || signedClient === undefined;
             if (hasNoSignedClient) {
                 this.logger.warn('signedClient is missing => Request without signing');
             }
@@ -69,7 +85,7 @@ export class SignedHttpService {
     }
 
     private getSignedHeader(signedClient: any, params: RequiredHttpParameters): Promise<any> {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             if (!signedClient) {
                 return resolve(null);
             }
@@ -81,11 +97,11 @@ export class SignedHttpService {
                 path: path,
                 headers: {},
                 queryParams: queryParams,
-                body: bodyReq
+                body: bodyReq,
             });
             const header = signedRequest && signedRequest.headers;
 
-            const hasNoHeader = (header === null || header === undefined);
+            const hasNoHeader = header === null || header === undefined;
             if (hasNoHeader) {
                 this.logger.warn('signedClient is missing => Request without signing');
                 return resolve(null);
@@ -118,7 +134,7 @@ export class SignedHttpService {
     private extractHostname(url: string) {
         let hostname;
         // find & remove protocol (http, ftp, etc.) and get hostname
-        if (url.indexOf("//") > -1) {
+        if (url.indexOf('//') > -1) {
             hostname = url.split('/')[2];
         } else {
             hostname = url.split('/')[0];

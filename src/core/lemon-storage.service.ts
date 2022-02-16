@@ -7,17 +7,22 @@ export interface Storage {
 }
 
 export class LemonStorageService {
-
     private credentialItemList = [
-        'accountId', 'authId', 'identityId',
-        'identityPoolId', 'identityToken', 'accessKeyId',
-        'secretKey', 'sessionToken', 'expiredTime'
+        'accountId',
+        'authId',
+        'identityId',
+        'identityPoolId',
+        'identityToken',
+        'accessKeyId',
+        'secretKey',
+        'sessionToken',
+        'expiredTime',
     ];
     private prefix: string;
     private storageService: Storage;
 
-    constructor(private project: string = 'lemon',
-                private storage: Storage = new LocalStorageService()) {
+    // eslint-disable-next-line @typescript-eslint/no-parameter-properties
+    constructor(private project: string = 'lemon', private storage: Storage = new LocalStorageService()) {
         this.prefix = `@${project}_LEMON_STORAGE`;
         this.storageService = storage;
     }
@@ -58,6 +63,7 @@ export class LemonStorageService {
         const AccessKeyId = await this.storageService.getItem(`${this.prefix}.accessKeyId`);
         const SecretKey = await this.storageService.getItem(`${this.prefix}.secretKey`);
         const SessionToken = await this.storageService.getItem(`${this.prefix}.sessionToken`);
+        // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
         return { AccessKeyId, SecretKey, SessionToken } as LemonCredentials;
     }
 
@@ -99,14 +105,16 @@ export class LemonStorageService {
 
         // set expired time
         const TIME_DELAY = 0.5; // 0.5 = 30minutes, 1 = 1hour
-        const expiredTime = new Date().getTime() + (TIME_DELAY * 60 * 60 * 1000); // 30 minutes
+        const expiredTime = new Date().getTime() + TIME_DELAY * 60 * 60 * 1000; // 30 minutes
         this.storageService.setItem(`${this.prefix}.expiredTime`, expiredTime.toString());
 
         return;
     }
 
     async clearLemonOAuthToken(): Promise<void> {
-        await Promise.all(this.credentialItemList.map(item => this.storageService.removeItem(`${this.prefix}.${item}`)));
+        await Promise.all(
+            this.credentialItemList.map(item => this.storageService.removeItem(`${this.prefix}.${item}`)),
+        );
         return;
     }
 }

@@ -5,7 +5,7 @@ import { IdentityService } from './identity.service';
 import { ProviderIdentityService } from './provider-identity.service';
 import { Storage } from './lemon-storage.service';
 
-export type Provider = 'naver' | 'kakao' | 'apple' | 'google' | '';
+export type Provider = 'naver' | 'kakao' | 'apple' | 'google' | 'phone' | 'etc';
 
 export class AuthService {
     private readonly identityService: IdentityService;
@@ -20,7 +20,7 @@ export class AuthService {
         this.providerIdentityService.createProviderIdentity(provider);
     }
 
-    getSavedToken(provider: Provider = ''): Promise<{ [key: string]: string }> {
+    getSavedToken(provider?: Provider): Promise<{ [key: string]: string }> {
         if (provider) {
             return this.providerIdentityService.getSavedCredentials(provider);
         }
@@ -35,7 +35,7 @@ export class AuthService {
         this.identityService.setOptions(options);
     }
 
-    isAuthenticated(provider: Provider = ''): Promise<boolean> {
+    isAuthenticated(provider?: Provider): Promise<boolean> {
         if (provider) {
             return this.providerIdentityService.isAuthenticated(provider);
         }
@@ -47,26 +47,25 @@ export class AuthService {
         return await this.providerIdentityService.getCredentials(provider);
     }
 
-    async buildProviderCredentialsByStorage(provider: Provider): Promise<AWS.Credentials> {
-        await this.providerIdentityService.buildCredentialsByStorage(provider);
-        return await this.providerIdentityService.getCredentials(provider);
-    }
-
-    getProviderCredentials(provider: Provider): Promise<AWS.Credentials | null> {
-        return this.providerIdentityService.getCredentials(provider).catch(() => null);
-    }
-
     async buildCredentialsByToken(token: LemonOAuthTokenResult): Promise<AWS.Credentials> {
         await this.identityService.buildCredentialsByToken(token);
         return await this.identityService.getCredentials();
     }
 
-    async buildCredentialsByStorage(): Promise<AWS.Credentials> {
+    async buildCredentialsByStorage(provider?: Provider): Promise<AWS.Credentials> {
+        if (provider) {
+            await this.providerIdentityService.buildCredentialsByStorage(provider);
+            return await this.providerIdentityService.getCredentials(provider);
+        }
+
         await this.identityService.buildCredentialsByStorage();
         return await this.identityService.getCredentials();
     }
 
-    getCredentials(): Promise<AWS.Credentials | null> {
+    getCredentials(provider?: Provider): Promise<AWS.Credentials | null> {
+        if (provider) {
+            return this.providerIdentityService.getCredentials(provider).catch(() => null);
+        }
         return this.identityService.getCredentials().catch(() => null);
     }
 
@@ -98,7 +97,7 @@ export class AuthService {
         return this.identityService.requestWithCredentials(method, endpoint, path, params, body);
     }
 
-    logout(provider: Provider): Promise<boolean> {
+    logout(provider?: Provider): Promise<boolean> {
         if (provider) {
             return this.providerIdentityService.logout(provider);
         }

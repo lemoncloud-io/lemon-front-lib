@@ -59,8 +59,6 @@ export class ProviderIdentityService {
 
     setOptions(provider: Provider, options: LemonOptions) {
         this.setExtraData(options);
-        // TODO: do something
-        console.log(provider);
     }
 
     getSavedCredentials(provider: Provider): Promise<{ [key: string]: string }> {

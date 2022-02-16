@@ -9,7 +9,7 @@ export type Provider = 'naver' | 'kakao' | 'apple' | 'google' | 'phone' | 'etc';
 
 export class AuthService {
     private readonly identityService: IdentityService;
-    private providerIdentityService: ProviderIdentityService;
+    private readonly providerIdentityService: ProviderIdentityService;
 
     constructor(options: LemonOptions, storage?: Storage) {
         this.identityService = new IdentityService(options, storage);

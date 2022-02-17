@@ -20,10 +20,11 @@ export interface ProviderIdentity {
 }
 
 export class ProviderIdentityService {
-    private identities: ProviderIdentity[];
-    private oauthURL: string;
+    private identities: ProviderIdentity[] = [];
+    private oauthURL: string = '';
     private extraHeader: any = {};
     private extraOptions: any = {};
+    private project: string = '';
     private readonly storage: Storage;
     private readonly logger: LoggerService;
     private readonly utils: UtilsService;
@@ -49,7 +50,8 @@ export class ProviderIdentityService {
     }
 
     createProviderIdentity(provider: Provider) {
-        const lemonStorage = new LemonStorageService(provider, this.storage);
+        const prefix = `${this.project}_${provider}`;
+        const lemonStorage = new LemonStorageService(prefix, this.storage);
         const identity = { provider, lemonStorage };
         this.identities.push(identity);
         this.checkCachedToken(provider)
@@ -226,7 +228,8 @@ export class ProviderIdentityService {
     }
 
     private setExtraData(options: LemonOptions) {
-        const { oAuthEndpoint, extraHeader, extraOptions } = options;
+        const { oAuthEndpoint, extraHeader, extraOptions, project } = options;
+        this.project = project;
         this.oauthURL = oAuthEndpoint;
         this.extraHeader = extraHeader ? extraHeader : {};
         this.extraOptions = extraOptions ? extraOptions : {};

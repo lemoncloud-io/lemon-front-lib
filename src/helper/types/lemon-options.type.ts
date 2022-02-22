@@ -3,5 +3,4 @@ export interface LemonOptions {
     oAuthEndpoint: string;
     extraHeader?: any;
     extraOptions?: any;
-    isReactNative?: boolean;
 }

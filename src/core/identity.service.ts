@@ -15,7 +15,6 @@ import {
 } from '../helper';
 
 export class IdentityService {
-
     private oauthURL: string;
     private extraHeader: any = {};
     private extraOptions: any = {};
@@ -88,7 +87,13 @@ export class IdentityService {
         return httpService.request(endpoint, objParams);
     }
 
-    requestWithCredentials(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
+    requestWithCredentials(
+        method: string = 'GET',
+        endpoint: string,
+        path: string,
+        params: any = {},
+        body?: any,
+    ): Promise<any> {
         return this.getCredentials().then(() => this.request(method, endpoint, path, params, body));
     }
 
@@ -130,7 +135,12 @@ export class IdentityService {
         }
 
         return new Promise(resolve => {
-            (<AWS.Credentials> AWS.config.credentials).get(error => {
+            const credentials = AWS.config.credentials as AWS.Credentials;
+            if (!credentials || !credentials.hasOwnProperty('get')) {
+                this.logger.error('isAuthenticated Error: No AWS.config.credentials');
+                resolve(false);
+            }
+            credentials.get(error => {
                 if (error) {
                     this.logger.error('get AWS.config.credentials error: ', error);
                 }
@@ -142,7 +152,8 @@ export class IdentityService {
 
     logout(): Promise<boolean> {
         AWS.config.credentials = null;
-        return this.lemonStorage.clearLemonOAuthToken()
+        return this.lemonStorage
+            .clearLemonOAuthToken()
             .then(() => true)
             .catch(() => false);
     }
@@ -194,15 +205,23 @@ export class IdentityService {
         //! $ http POST :8086/oauth/auth001/refresh 'current=2020-02-03T08:02:37.468Z' 'signature='
         //! INFO: requestWithCredentials()의 경우, 내부에서 getCredential() 호출하기 때문에 recursive 발생함
         this.logger.log('request refresh to OAUTH API');
-        return this.request('POST', this.oauthURL, `/oauth/${originAuthId}/refresh`, {}, { current, signature })
-            .then(async (result: LemonRefreshTokenResult) => {
+        return this.request('POST', this.oauthURL, `/oauth/${originAuthId}/refresh`, {}, { current, signature }).then(
+            async (result: LemonRefreshTokenResult) => {
                 const { authId, accountId, identityId, credential } = result;
-                const refreshToken: LemonOAuthTokenResult = { authId, accountId, identityPoolId, identityToken, identityId, credential };
+                const refreshToken: LemonOAuthTokenResult = {
+                    authId,
+                    accountId,
+                    identityPoolId,
+                    identityToken,
+                    identityId,
+                    credential,
+                };
                 await this.lemonStorage.saveLemonOAuthToken(refreshToken);
                 this.logger.log('create new credentials after refresh token');
                 this.createAWSCredentials(credential);
                 return result;
-            });
+            },
+        );
     }
 
     private createAWSCredentials(credential: LemonCredentials) {
@@ -212,14 +231,18 @@ export class IdentityService {
 
     private getCurrentCredentials(): Promise<AWS.Credentials> {
         return new Promise((resolve, reject) => {
-            const credentials = (<AWS.Credentials> AWS.config.credentials);
-            credentials.get((error) => {
+            const credentials = AWS.config.credentials as AWS.Credentials;
+            if (!credentials || !credentials.hasOwnProperty('get')) {
+                this.logger.error('Error on getCurrentCredentials: No AWS.config.credentials');
+                reject(null);
+            }
+            credentials.get(error => {
                 if (error) {
                     this.logger.error('Error on getCurrentCredentials: ', error);
                     reject(null);
                 }
                 this.logger.info('success to get AWS credentials');
-                const awsCredentials = <AWS.Credentials> AWS.config.credentials;
+                const awsCredentials = AWS.config.credentials as AWS.Credentials;
                 resolve(awsCredentials);
             });
         });

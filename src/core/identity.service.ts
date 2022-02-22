@@ -135,12 +135,8 @@ export class IdentityService {
         }
 
         return new Promise(resolve => {
-            const credentials = AWS.config.credentials as AWS.Credentials;
-            if (!credentials || !credentials.hasOwnProperty('get')) {
-                this.logger.error('isAuthenticated Error: No AWS.config.credentials');
-                resolve(false);
-            }
-            credentials.get(error => {
+            // eslint-disable-next-line @typescript-eslint/no-angle-bracket-type-assertion
+            (<AWS.Credentials> AWS.config.credentials).get(error => {
                 if (error) {
                     this.logger.error('get AWS.config.credentials error: ', error);
                 }
@@ -232,10 +228,6 @@ export class IdentityService {
     private getCurrentCredentials(): Promise<AWS.Credentials> {
         return new Promise((resolve, reject) => {
             const credentials = AWS.config.credentials as AWS.Credentials;
-            if (!credentials || !credentials.hasOwnProperty('get')) {
-                this.logger.error('Error on getCurrentCredentials: No AWS.config.credentials');
-                reject(null);
-            }
             credentials.get(error => {
                 if (error) {
                     this.logger.error('Error on getCurrentCredentials: ', error);

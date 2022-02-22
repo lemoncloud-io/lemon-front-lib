@@ -201,10 +201,6 @@ export class ProviderIdentityService {
 
         return new Promise(resolve => {
             const credentials = identity.credentials as AWS.Credentials;
-            if (!credentials || !credentials.hasOwnProperty('get')) {
-                this.logger.error('isAuthenticated Error: No AWS.config.credentials');
-                resolve(false);
-            }
             credentials.get(error => {
                 if (error) {
                     this.logger.error('get AWS.config.credentials error: ', error);
@@ -331,11 +327,6 @@ export class ProviderIdentityService {
             }
 
             const credentials = identity.credentials as AWS.Credentials;
-            if (!credentials || !credentials.hasOwnProperty('get')) {
-                this.logger.error('Error on getCurrentCredentials: No AWS.config.credentials');
-                reject(null);
-            }
-
             credentials.get(error => {
                 if (error) {
                     this.logger.error('Error on getCurrentCredentials: ', error);

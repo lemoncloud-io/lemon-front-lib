@@ -1,7 +1,7 @@
 import * as AWS from 'aws-sdk/global';
 // services
 import { LemonStorageService, Storage } from './lemon-storage.service';
-import { UtilsService, SignedHttpService } from '../helper';
+import { calcSignature, SignedHttpService } from '../helper';
 // types
 import { SignaturePayload, RequiredHttpParameters } from '../helper';
 import {
@@ -27,11 +27,9 @@ export class ProviderIdentityService {
     private project: string = '';
     private readonly storage: Storage;
     private readonly logger: LoggerService;
-    private readonly utils: UtilsService;
 
     constructor(options: LemonOptions, storage?: Storage) {
         this.storage = storage; // to create LemonStorageService instance
-        this.utils = new UtilsService();
         this.logger = new LoggerService('PIS', options);
         this.logger.log('initialize ProviderIdentityService(PIS)');
         this.setExtraData(options);
@@ -275,7 +273,7 @@ export class ProviderIdentityService {
 
         const payload: SignaturePayload = { authId: originAuthId, accountId, identityId, identityToken };
         const current = new Date().toISOString();
-        const signature = this.utils.calcSignature(payload, current);
+        const signature = calcSignature(payload, current);
 
         //! lemon-accounts-api
         //! $ http POST :8086/oauth/auth001/refresh 'current=2020-02-03T08:02:37.468Z' 'signature='

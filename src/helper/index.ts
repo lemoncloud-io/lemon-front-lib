@@ -6,4 +6,4 @@ export * from './services/signed-http.service';
 export * from './services/storage.service';
 export * from './services/logger.service';
 export * from './services/logger-helper.service';
-export * from './services/utils.service';
+export * from './services/utils';

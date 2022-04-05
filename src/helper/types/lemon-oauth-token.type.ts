@@ -21,3 +21,10 @@ export interface LemonRefreshTokenResult {
     identityId: string;
     credential: LemonCredentials;
 }
+
+export interface SignaturePayload {
+    authId?: string;
+    accountId?: string;
+    identityId?: string;
+    identityToken?: string;
+}

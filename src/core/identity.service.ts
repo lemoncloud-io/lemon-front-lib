@@ -2,7 +2,7 @@ import * as AWS from 'aws-sdk/global';
 
 // services
 import { LemonStorageService, Storage } from './lemon-storage.service';
-import { UtilsService, SignedHttpService } from '../helper';
+import { calcSignature, createAsyncDelay, SignedHttpService, withRetries } from '../helper';
 
 // types
 import { SignaturePayload, RequiredHttpParameters } from '../helper';
@@ -21,7 +21,6 @@ export class IdentityService {
 
     private readonly lemonStorage: LemonStorageService;
     private readonly logger: LoggerService;
-    private readonly utils: UtilsService;
 
     constructor(options: LemonOptions, storage?: Storage) {
         this.logger = new LoggerService('IDS', options);
@@ -30,7 +29,6 @@ export class IdentityService {
         this.setExtraData(options);
         const { project } = options;
         this.lemonStorage = new LemonStorageService(project, storage);
-        this.utils = new UtilsService();
 
         this.checkCachedToken()
             .then(result => this.logger.log('checkCachedToken: ', result))
@@ -107,7 +105,10 @@ export class IdentityService {
         const shouldRefreshToken = await this.lemonStorage.shouldRefreshToken();
         if (shouldRefreshToken) {
             this.logger.info('should refresh token!');
-            return this.refreshCachedToken().then(() => this.getCurrentCredentials());
+            const refreshed = await this.refreshCachedToken();
+            if (refreshed) {
+                return await this.getCurrentCredentials();
+            }
         }
 
         const credentials = AWS.config.credentials as AWS.Credentials;
@@ -121,22 +122,21 @@ export class IdentityService {
     async isAuthenticated(): Promise<boolean> {
         const hasCachedToken = await this.lemonStorage.hasCachedToken();
         if (!hasCachedToken) {
-            return new Promise(resolve => resolve(false));
+            return false;
         }
 
         const shouldRefreshToken = await this.lemonStorage.shouldRefreshToken();
         if (shouldRefreshToken) {
             this.logger.info('return isAuthenticated after refresh token');
-            return new Promise(resolve => {
-                this.refreshCachedToken()
-                    .then(() => resolve(true))
-                    .catch(() => resolve(false));
-            });
+            const refreshed = await this.refreshCachedToken();
+            if (refreshed) {
+                return true;
+            }
         }
 
         return new Promise(resolve => {
             // eslint-disable-next-line @typescript-eslint/no-angle-bracket-type-assertion
-            (<AWS.Credentials> AWS.config.credentials).get(error => {
+            (<AWS.Credentials>AWS.config.credentials).get(error => {
                 if (error) {
                     this.logger.error('get AWS.config.credentials error: ', error);
                 }
@@ -161,63 +161,67 @@ export class IdentityService {
         this.extraOptions = extraOptions ? extraOptions : {};
     }
 
-    private checkCachedToken(): Promise<string> {
+    private async checkCachedToken(): Promise<string> {
         this.logger.log('checkCachedToken()...');
-        return new Promise(async (resolve, reject) => {
-            const hasCachedToken = await this.lemonStorage.hasCachedToken();
-            if (!hasCachedToken) {
-                return reject('has no token!');
-            }
+        const hasCachedToken = await this.lemonStorage.hasCachedToken();
+        if (!hasCachedToken) {
+            throw Error('has no token!');
+        }
 
-            const shouldRefreshToken = await this.lemonStorage.shouldRefreshToken();
-            if (shouldRefreshToken) {
-                return this.refreshCachedToken()
-                    .then(() => resolve('refresh token!'))
-                    .catch(async err => {
-                        this.logger.error('refreshCachedToken(): ', err);
-                        this.logger.log('clear Storage...');
-                        await this.lemonStorage.clearLemonOAuthToken();
-                        reject(err);
-                    });
-            } else {
-                // Build AWS credential without refresh token
-                const credential = await this.lemonStorage.getCachedCredentialItems();
-                this.createAWSCredentials(credential);
-                return resolve('build credentials!');
+        const shouldRefreshToken = await this.lemonStorage.shouldRefreshToken();
+        if (shouldRefreshToken) {
+            const [result, error] = await this.refreshCachedToken()
+                .then(() => ['refresh token!', null])
+                .catch(err => [null, err]);
+            if (error) {
+                this.logger.error('refreshCachedToken(): ', error);
+                return 'failed to refresh token!';
             }
-        });
+            return result;
+        }
+        // build AWS credential without refresh
+        const credential = await this.lemonStorage.getCachedCredentialItems();
+        this.createAWSCredentials(credential);
+        return 'build credentials!';
     }
 
-    private async refreshCachedToken(): Promise<LemonRefreshTokenResult> {
+    private async refreshCachedToken(): Promise<LemonRefreshTokenResult | null> {
         this.logger.log('refreshCachedToken()...');
         const originToken: LemonOAuthTokenResult = await this.lemonStorage.getCachedLemonOAuthToken();
-        const { authId: originAuthId, accountId, identityId, identityToken, identityPoolId } = originToken;
-
-        const payload: SignaturePayload = { authId: originAuthId, accountId, identityId, identityToken };
+        const payload: SignaturePayload = {
+            authId: originToken.authId,
+            accountId: originToken.accountId,
+            identityId: originToken.identityId,
+            identityToken: originToken.identityToken,
+        };
         const current = new Date().toISOString();
-        const signature = this.utils.calcSignature(payload, current);
+        const signature = calcSignature(payload, current);
 
         //! lemon-accounts-api
         //! $ http POST :8086/oauth/auth001/refresh 'current=2020-02-03T08:02:37.468Z' 'signature='
         //! INFO: requestWithCredentials()의 경우, 내부에서 getCredential() 호출하기 때문에 recursive 발생함
         this.logger.log('request refresh to OAUTH API');
-        return this.request('POST', this.oauthURL, `/oauth/${originAuthId}/refresh`, {}, { current, signature }).then(
-            async (result: LemonRefreshTokenResult) => {
-                const { authId, accountId, identityId, credential } = result;
-                const refreshToken: LemonOAuthTokenResult = {
-                    authId,
-                    accountId,
-                    identityPoolId,
-                    identityToken,
-                    identityId,
-                    credential,
-                };
-                await this.lemonStorage.saveLemonOAuthToken(refreshToken);
-                this.logger.log('create new credentials after refresh token');
-                this.createAWSCredentials(credential);
-                return result;
+        const bodyData = { authId: originToken.authId, current, signature };
+        const refreshResult: LemonRefreshTokenResult = await this.requestRefreshWithRetries(bodyData).catch(
+            async err => {
+                this.logger.error('refresh token error:', err);
+                return null;
             },
         );
+        if (!refreshResult) {
+            return null;
+        }
+
+        const { credential } = refreshResult;
+        const refreshToken: LemonOAuthTokenResult = {
+            ...refreshResult,
+            identityPoolId: originToken.identityPoolId,
+            identityToken: originToken.identityToken,
+        };
+        await this.lemonStorage.saveLemonOAuthToken(refreshToken);
+        this.logger.log('create new credentials after refresh token');
+        this.createAWSCredentials(credential);
+        return refreshResult;
     }
 
     private createAWSCredentials(credential: LemonCredentials) {
@@ -239,4 +243,39 @@ export class IdentityService {
             });
         });
     }
+
+    private async requestRefreshWithRetries(data: { authId: string; current: string; signature: string }) {
+        const { authId, current, signature } = data;
+        let retryCount = 0;
+        const nthTry = 10;
+        do {
+            try {
+                return await this.request(
+                    'POST',
+                    this.oauthURL,
+                    `/oauth/${authId}/refresh`,
+                    {},
+                    { current, signature },
+                );
+            } catch (error) {
+                const is400Error =
+                    error.status === 400 ||
+                    error.status === '400' ||
+                    error.response?.status === 400 ||
+                    error.response?.status === '400';
+                if (is400Error) {
+                    this.logger.error('refreshCachedToken(): ', error);
+                    this.logger.log('clear Storage...');
+                    await this.logout();
+                    window.location.reload();
+                }
+                const isLastAttempt = retryCount === nthTry;
+                if (isLastAttempt) {
+                    return Promise.reject(error);
+                }
+            }
+            await createAsyncDelay(500);
+        } while (retryCount++ < nthTry);
+    }
+
 }

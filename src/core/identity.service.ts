@@ -111,6 +111,12 @@ export class IdentityService {
             }
         }
 
+        const cachedToken = await this.lemonStorage.hasCachedToken();
+        if (!cachedToken) {
+            this.logger.info('has no cached token!');
+            return new Promise(resolve => resolve(null));
+        }
+
         const credentials = AWS.config.credentials as AWS.Credentials;
         const shouldRefresh = credentials.needsRefresh();
         if (shouldRefresh) {
@@ -132,6 +138,11 @@ export class IdentityService {
             if (refreshed) {
                 return true;
             }
+        }
+
+        const cachedToken = await this.lemonStorage.hasCachedToken();
+        if (!cachedToken) {
+            return false;
         }
 
         return new Promise(resolve => {
@@ -170,14 +181,17 @@ export class IdentityService {
 
         const shouldRefreshToken = await this.lemonStorage.shouldRefreshToken();
         if (shouldRefreshToken) {
-            const [result, error] = await this.refreshCachedToken()
-                .then(() => ['refresh token!', null])
-                .catch(err => [null, err]);
-            if (error) {
-                this.logger.error('refreshCachedToken(): ', error);
-                return 'failed to refresh token!';
+            this.logger.info('should refresh token!');
+            const refreshed = await this.refreshCachedToken();
+            if (refreshed) {
+                await this.getCurrentCredentials();
+                return 'refresh token!';
             }
-            return result;
+        }
+
+        const cachedToken = await this.lemonStorage.hasCachedToken();
+        if (!cachedToken) {
+            throw Error('has no token!');
         }
         // build AWS credential without refresh
         const credential = await this.lemonStorage.getCachedCredentialItems();
@@ -205,6 +219,11 @@ export class IdentityService {
         const refreshResult: LemonRefreshTokenResult = await this.requestRefreshWithRetries(bodyData).catch(
             async err => {
                 this.logger.error('refresh token error:', err);
+                if (err === 'logout') {
+                    await this.logout();
+                    this.logger.log('clear Storage...');
+                    return null;
+                }
                 return null;
             },
         );
@@ -264,10 +283,7 @@ export class IdentityService {
                     error.response?.status === 400 ||
                     error.response?.status === '400';
                 if (is400Error) {
-                    this.logger.error('refreshCachedToken(): ', error);
-                    this.logger.log('clear Storage...');
-                    await this.logout();
-                    window.location.reload();
+                    return Promise.reject('logout');
                 }
                 const isLastAttempt = retryCount === nthTry;
                 if (isLastAttempt) {
@@ -277,5 +293,4 @@ export class IdentityService {
             await createAsyncDelay(500);
         } while (retryCount++ < nthTry);
     }
-
 }

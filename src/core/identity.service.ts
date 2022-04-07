@@ -220,11 +220,12 @@ export class IdentityService {
         const refreshResult: LemonRefreshTokenResult = await this.requestRefreshWithRetries(bodyData).catch(
             async err => {
                 if (err === 'logout') {
+                    if (!!window) {
+                        const event = new CustomEvent('LOGOUT_FROM_LIB', { detail: { authId: originToken.authId } });
+                        window.dispatchEvent(event);
+                    }
                     this.logger.error('refresh token error:', err);
                     this.logger.log('clear Storage...');
-                    if (document && document.body) {
-                        document.body.dispatchEvent(new Event('logout'));
-                    }
                     await this.logout();
                 }
                 return null;

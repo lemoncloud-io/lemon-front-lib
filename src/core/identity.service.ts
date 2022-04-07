@@ -2,7 +2,7 @@ import * as AWS from 'aws-sdk/global';
 
 // services
 import { LemonStorageService, Storage } from './lemon-storage.service';
-import { calcSignature, createAsyncDelay, SignedHttpService, withRetries } from '../helper';
+import { calcSignature, createAsyncDelay, SignedHttpService } from '../helper';
 
 // types
 import { SignaturePayload, RequiredHttpParameters } from '../helper';
@@ -193,6 +193,7 @@ export class IdentityService {
         if (!cachedToken) {
             throw Error('has no token!');
         }
+
         // build AWS credential without refresh
         const credential = await this.lemonStorage.getCachedCredentialItems();
         this.createAWSCredentials(credential);
@@ -218,11 +219,13 @@ export class IdentityService {
         const bodyData = { authId: originToken.authId, current, signature };
         const refreshResult: LemonRefreshTokenResult = await this.requestRefreshWithRetries(bodyData).catch(
             async err => {
-                this.logger.error('refresh token error:', err);
                 if (err === 'logout') {
-                    await this.logout();
+                    this.logger.error('refresh token error:', err);
                     this.logger.log('clear Storage...');
-                    return null;
+                    if (document && document.body) {
+                        document.body.dispatchEvent(new Event('logout'));
+                    }
+                    await this.logout();
                 }
                 return null;
             },

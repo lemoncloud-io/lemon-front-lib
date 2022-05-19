@@ -18,6 +18,7 @@ export class IdentityService {
     private oauthURL: string;
     private extraHeader: any = {};
     private extraOptions: any = {};
+    private shouldUseXLemonIdentity: boolean = false;
 
     private readonly lemonStorage: LemonStorageService;
     private readonly logger: LoggerService;
@@ -74,13 +75,25 @@ export class IdentityService {
         this.createAWSCredentials(credential);
     }
 
-    request(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
+    async request(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
         const queryParams = { ...params };
         // const bodyReq = body && typeof body === 'object' ? JSON.stringify(body) : body;
         const bodyReq = body;
         const objParams: RequiredHttpParameters = { method, path, queryParams, bodyReq };
+        if (!this.shouldUseXLemonIdentity) {
+            const options = { customHeader: this.extraHeader, customOptions: this.extraOptions };
+            const httpService = new SignedHttpService(options);
+            return httpService.request(endpoint, objParams);
+        }
 
-        const options = { customHeader: this.extraHeader, customOptions: this.extraOptions };
+        // add X-Lemon-Identity
+        const isAuthenticated = await this.isAuthenticated();
+        const identityToken = (await this.lemonStorage.getItem('identityToken')) || '';
+        let customHeader = { ...this.extraHeader };
+        if (isAuthenticated && !!identityToken) {
+            customHeader = { ...customHeader, 'X-Lemon-Identity': identityToken };
+        }
+        const options = { customHeader, customOptions: this.extraOptions };
         const httpService = new SignedHttpService(options);
         return httpService.request(endpoint, objParams);
     }
@@ -170,12 +183,7 @@ export class IdentityService {
         this.oauthURL = oAuthEndpoint;
         this.extraHeader = extraHeader ? extraHeader : {};
         this.extraOptions = extraOptions ? extraOptions : {};
-
-        // check identityToken for X-Lemon-Identity
-        const identityToken = this.lemonStorage.getItem('identityToken');
-        if (!!identityToken) {
-            this.extraHeader = { ...this.extraHeader, 'X-Lemon-Identity': identityToken };
-        }
+        this.shouldUseXLemonIdentity = options.shouldUseXLemonIdentity || false;
     }
 
     private async checkCachedToken(): Promise<string> {

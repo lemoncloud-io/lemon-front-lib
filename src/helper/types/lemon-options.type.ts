@@ -3,4 +3,5 @@ export interface LemonOptions {
     oAuthEndpoint: string;
     extraHeader?: any;
     extraOptions?: any;
+    shouldUseXLemonIdentity?: boolean;
 }

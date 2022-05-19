@@ -92,16 +92,16 @@ export class LemonStorageService {
         const { AccessKeyId, SecretKey, SessionToken } = credential;
 
         // save items...
-        this.storageService.setItem(`${this.prefix}.accountId`, accountId);
-        this.storageService.setItem(`${this.prefix}.authId`, authId);
-        this.storageService.setItem(`${this.prefix}.identityId`, identityId);
-        this.storageService.setItem(`${this.prefix}.identityPoolId`, identityPoolId);
-        this.storageService.setItem(`${this.prefix}.identityToken`, identityToken);
+        this.storageService.setItem(`${this.prefix}.accountId`, accountId || '');
+        this.storageService.setItem(`${this.prefix}.authId`, authId || '');
+        this.storageService.setItem(`${this.prefix}.identityId`, identityId || '');
+        this.storageService.setItem(`${this.prefix}.identityPoolId`, identityPoolId || '');
+        this.storageService.setItem(`${this.prefix}.identityToken`, identityToken || '');
 
         // credential for AWS
-        this.storageService.setItem(`${this.prefix}.accessKeyId`, AccessKeyId);
-        this.storageService.setItem(`${this.prefix}.secretKey`, SecretKey);
-        this.storageService.setItem(`${this.prefix}.sessionToken`, SessionToken);
+        this.storageService.setItem(`${this.prefix}.accessKeyId`, AccessKeyId || '');
+        this.storageService.setItem(`${this.prefix}.secretKey`, SecretKey || '');
+        this.storageService.setItem(`${this.prefix}.sessionToken`, SessionToken || '');
 
         // set expired time
         const TIME_DELAY = 0.5; // 0.5 = 30minutes, 1 = 1hour

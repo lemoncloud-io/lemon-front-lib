@@ -26,9 +26,9 @@ export class IdentityService {
         this.logger = new LoggerService('IDS', options);
         this.logger.log('initialize IdentityService(IDS)');
 
-        this.setExtraData(options);
         const { project } = options;
         this.lemonStorage = new LemonStorageService(project, storage);
+        this.setExtraData(options);
 
         this.checkCachedToken()
             .then(result => this.logger.log('checkCachedToken: ', result))
@@ -170,6 +170,12 @@ export class IdentityService {
         this.oauthURL = oAuthEndpoint;
         this.extraHeader = extraHeader ? extraHeader : {};
         this.extraOptions = extraOptions ? extraOptions : {};
+
+        // check identityToken for X-Lemon-Identity
+        const identityToken = this.lemonStorage.getItem('identityToken');
+        if (!!identityToken) {
+            this.extraHeader = { ...this.extraHeader, 'X-Lemon-Identity': identityToken };
+        }
     }
 
     private async checkCachedToken(): Promise<string> {

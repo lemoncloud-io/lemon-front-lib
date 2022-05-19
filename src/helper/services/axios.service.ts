@@ -1,10 +1,10 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosPromise, Method, AxiosResponse } from 'axios';
 
 export class AxiosService {
-
     private options: AxiosRequestConfig;
     private axiosInstance: AxiosInstance;
 
+    // eslint-disable-next-line @typescript-eslint/no-parameter-properties
     constructor(private requestOptions: AxiosRequestConfig = {}) {
         this.options = requestOptions;
         this.axiosInstance = axios.create();

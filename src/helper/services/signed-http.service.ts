@@ -1,9 +1,7 @@
 import * as AWS from 'aws-sdk/global';
-
 import { AxiosService } from './axios.service';
 import { LoggerService } from './logger.service';
-
-import { sigV4Client } from '../../vendor/sig-v4.service';
+import { sigV4Client } from '../../vendor';
 
 export interface RequiredHttpParameters {
     method: string;
@@ -25,7 +23,9 @@ export class SignedHttpService {
 
     constructor(options: SignedHttpOptions = {}, credentials?: AWS.Credentials) {
         const { customHeader, customOptions } = options;
-        this.customHeader = customHeader ? { ...customHeader } : { 'Content-Type': 'application/json' };
+        this.customHeader = customHeader
+            ? { 'Content-Type': 'application/json', ...customHeader }
+            : { 'Content-Type': 'application/json' };
         this.customOptions = customOptions ? { ...customOptions } : {};
         this.logger = new LoggerService();
         if (credentials) {

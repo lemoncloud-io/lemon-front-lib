@@ -20,10 +20,9 @@ const SHA256 = CryptoJS.SHA256;
 const encHex = CryptoJS.enc.Hex;
 const HmacSHA256 = CryptoJS.HmacSHA256;
 
-const sigV4Client : { [key:string]: any } = { };
+const sigV4Client: { [key: string]: any } = { };
 
 sigV4Client.newClient = function(config: any) {
-
     const AWS_SHA_256 = 'AWS4-HMAC-SHA256';
     const AWS4_REQUEST = 'aws4_request';
     const AWS4 = 'AWS4';

@@ -1,5 +1,28 @@
-export class LocalStorageService {
+let dataMemory: any = {};
 
+class MemoryStorage {
+    constructor() {}
+
+    public setItem(key: string, value: string) {
+        dataMemory[key] = value;
+        return dataMemory[key];
+    }
+
+    public getItem(key: string) {
+        return Object.prototype.hasOwnProperty.call(dataMemory, key) ? dataMemory[key] : undefined;
+    }
+
+    public removeItem(key: string) {
+        return delete dataMemory[key];
+    }
+
+    public clear() {
+        dataMemory = {};
+        return dataMemory;
+    }
+}
+
+export class LocalStorageService {
     private storage: any;
 
     constructor() {
@@ -24,29 +47,3 @@ export class LocalStorageService {
         this.storage.removeItem(key);
     }
 }
-
-let dataMemory: any = {};
-
-class MemoryStorage {
-
-    constructor() {}
-
-    public setItem(key: string, value: string) {
-        dataMemory[key] = value;
-        return dataMemory[key];
-    }
-
-    public getItem(key: string) {
-        return Object.prototype.hasOwnProperty.call(dataMemory, key) ? dataMemory[key] : undefined;
-    }
-
-    public removeItem(key: string) {
-        return delete dataMemory[key];
-    }
-
-    public clear() {
-        dataMemory = {};
-        return dataMemory;
-    }
-}
-

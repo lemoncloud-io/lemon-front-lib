@@ -89,10 +89,10 @@ export class IdentityService {
         // add X-Lemon-Identity
         const isAuthenticated = await this.isAuthenticated();
         const identityToken = (await this.lemonStorage.getItem('identityToken')) || '';
-        let customHeader = { ...this.extraHeader };
-        if (isAuthenticated && !!identityToken) {
-            customHeader = { ...customHeader, 'X-Lemon-Identity': identityToken };
-        }
+        const shouldSetHeader = isAuthenticated && !!identityToken;
+        const customHeader = shouldSetHeader
+            ? { ...this.extraHeader }
+            : { ...this.extraHeader, 'X-Lemon-Identity': identityToken };
         const options = { customHeader, customOptions: this.extraOptions };
         const httpService = new SignedHttpService(options);
         return httpService.request(endpoint, objParams);

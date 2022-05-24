@@ -2,49 +2,25 @@ import * as AWS from 'aws-sdk/global';
 
 import { LemonOAuthTokenResult, LemonOptions } from '../helper';
 import { IdentityService } from './identity.service';
-import { ProviderIdentityService } from './provider-identity.service';
 import { Storage } from './lemon-storage.service';
-
-export type Provider = 'naver' | 'kakao' | 'apple' | 'google' | 'phone' | 'etc';
 
 export class AuthService {
     private readonly identityService: IdentityService;
-    private readonly providerIdentityService: ProviderIdentityService;
 
     constructor(options: LemonOptions, storage?: Storage) {
         this.identityService = new IdentityService(options, storage);
-        this.providerIdentityService = new ProviderIdentityService(options, storage);
     }
 
-    createProviderIdentity(provider: Provider) {
-        this.providerIdentityService.createProviderIdentity(provider);
-    }
-
-    getSavedToken(provider?: Provider): Promise<{ [key: string]: string }> {
-        if (provider) {
-            return this.providerIdentityService.getSavedCredentials(provider);
-        }
+    getSavedToken(): Promise<{ [key: string]: string }> {
         return this.identityService.getSavedCredentials();
-    }
-
-    setProviderOptions(provider: Provider, options: LemonOptions) {
-        this.providerIdentityService.setOptions(provider, options);
     }
 
     setLemonOptions(options: LemonOptions) {
         this.identityService.setOptions(options);
     }
 
-    isAuthenticated(provider?: Provider): Promise<boolean> {
-        if (provider) {
-            return this.providerIdentityService.isAuthenticated(provider);
-        }
+    isAuthenticated(): Promise<boolean> {
         return this.identityService.isAuthenticated();
-    }
-
-    async buildProviderCredentialsByToken(provider: Provider, token: LemonOAuthTokenResult): Promise<AWS.Credentials> {
-        await this.providerIdentityService.buildCredentialsByToken(provider, token);
-        return await this.providerIdentityService.getCredentials(provider);
     }
 
     async buildCredentialsByToken(token: LemonOAuthTokenResult): Promise<AWS.Credentials> {
@@ -52,20 +28,12 @@ export class AuthService {
         return await this.identityService.getCredentials();
     }
 
-    async buildCredentialsByStorage(provider?: Provider): Promise<AWS.Credentials> {
-        if (provider) {
-            await this.providerIdentityService.buildCredentialsByStorage(provider);
-            return await this.providerIdentityService.getCredentials(provider);
-        }
-
+    async buildCredentialsByStorage(): Promise<AWS.Credentials> {
         await this.identityService.buildCredentialsByStorage();
         return await this.identityService.getCredentials();
     }
 
-    getCredentials(provider?: Provider): Promise<AWS.Credentials | null> {
-        if (provider) {
-            return this.providerIdentityService.getCredentials(provider).catch(() => null);
-        }
+    getCredentials(): Promise<AWS.Credentials | null> {
         return this.identityService.getCredentials().catch(() => null);
     }
 
@@ -75,11 +43,7 @@ export class AuthService {
         path: string,
         params?: any,
         body?: any,
-        provider?: Provider,
     ): Promise<any> {
-        if (provider) {
-            return this.providerIdentityService.request(method, endpoint, path, params, body, provider);
-        }
         return this.identityService.request(method, endpoint, path, params, body);
     }
 
@@ -89,18 +53,11 @@ export class AuthService {
         path: string,
         params?: any,
         body?: any,
-        provider?: Provider,
     ): Promise<any> {
-        if (provider) {
-            return this.providerIdentityService.requestWithCredentials(method, endpoint, path, params, body, provider);
-        }
         return this.identityService.requestWithCredentials(method, endpoint, path, params, body);
     }
 
-    logout(provider?: Provider): Promise<boolean> {
-        if (provider) {
-            return this.providerIdentityService.logout(provider);
-        }
+    logout(): Promise<boolean> {
         return this.identityService.logout();
     }
 }

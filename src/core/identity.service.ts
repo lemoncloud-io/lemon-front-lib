@@ -59,7 +59,7 @@ export class IdentityService {
         // STEP 1. Save to localStorage
         await this.lemonStorage.saveLemonOAuthToken(token);
         // STEP 2. Set AWS Credential
-        this.createAWSCredentials(credential);
+        IdentityService.createAWSCredentials(credential);
     }
 
     async buildCredentialsByStorage(): Promise<void> {
@@ -72,7 +72,7 @@ export class IdentityService {
         if (!SecretKey) {
             throw new Error('.SecretKey (string) is required!');
         }
-        this.createAWSCredentials(credential);
+        IdentityService.createAWSCredentials(credential);
     }
 
     async request(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
@@ -210,7 +210,7 @@ export class IdentityService {
 
         // build AWS credential without refresh
         const credential = await this.lemonStorage.getCachedCredentialItems();
-        this.createAWSCredentials(credential);
+        IdentityService.createAWSCredentials(credential);
         return 'build credentials!';
     }
 
@@ -257,11 +257,11 @@ export class IdentityService {
         };
         await this.lemonStorage.saveLemonOAuthToken(refreshToken);
         this.logger.log('create new credentials after refresh token');
-        this.createAWSCredentials(credential);
+        IdentityService.createAWSCredentials(credential);
         return refreshResult;
     }
 
-    private createAWSCredentials(credential: LemonCredentials) {
+    private static createAWSCredentials(credential: LemonCredentials) {
         const { AccessKeyId, SecretKey, SessionToken } = credential;
         AWS.config.credentials = new AWS.Credentials(AccessKeyId, SecretKey, SessionToken);
     }

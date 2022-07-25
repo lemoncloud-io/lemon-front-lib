@@ -75,10 +75,14 @@ export class IdentityService {
         IdentityService.createAWSCredentials(credential);
     }
 
-    async request(method: string = 'GET', endpoint: string, path: string, params: any = {}, body?: any): Promise<any> {
+    async request(
+        method: string = 'GET',
+        endpoint: string,
+        path: string,
+        params: any = {},
+        bodyReq?: any,
+    ): Promise<any> {
         const queryParams = { ...params };
-        // const bodyReq = body && typeof body === 'object' ? JSON.stringify(body) : body;
-        const bodyReq = body;
         const objParams: RequiredHttpParameters = { method, path, queryParams, bodyReq };
         if (!this.shouldUseXLemonIdentity) {
             const options = { customHeader: this.extraHeader, customOptions: this.extraOptions };
@@ -87,9 +91,9 @@ export class IdentityService {
         }
 
         // add X-Lemon-Identity
-        const isAuthenticated = await this.isAuthenticated();
+        const identityId = (await this.lemonStorage.getItem('identityId')) || '';
         const identityToken = (await this.lemonStorage.getItem('identityToken')) || '';
-        const shouldSetHeader = isAuthenticated && !!identityToken;
+        const shouldSetHeader = !!identityId && !!identityToken;
         const customHeader = shouldSetHeader
             ? { ...this.extraHeader }
             : { ...this.extraHeader, 'X-Lemon-Identity': identityToken };

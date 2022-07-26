@@ -27,7 +27,7 @@ describe('Utils', () => {
 
         const payload: SignaturePayload = { authId, accountId, identityId, identityToken: token.identityToken };
         const signature = calcSignature(payload, current, userAgent);
-        expect(signature).toEqual('3KGbSFllLjSjrDORGq2uj8RHpKLabrNT6hKa429lP7M=');
+        expect(signature).toEqual('QvGdy/qilwKDEZgjHoqqOypIhpzhlkb0xleIVg1JjtU=');
     });
 
 });

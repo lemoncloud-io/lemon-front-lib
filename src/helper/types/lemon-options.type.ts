@@ -19,7 +19,7 @@ export interface LemonOptions {
      */
     extraOptions?: any;
     /**
-     * Whether to add the x-lemon-identity to request header
+     * whether to add the x-lemon-identity to request header
      */
     shouldUseXLemonIdentity?: boolean;
 }

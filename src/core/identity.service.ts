@@ -93,10 +93,10 @@ export class IdentityService {
         // add X-Lemon-Identity
         const identityId = (await this.lemonStorage.getItem('identityId')) || '';
         const identityToken = (await this.lemonStorage.getItem('identityToken')) || '';
-        const shouldSetHeader = !!identityId && !!identityToken;
-        const customHeader = shouldSetHeader
-            ? { ...this.extraHeader }
-            : { ...this.extraHeader, 'X-Lemon-Identity': identityToken };
+        const shouldSetXLemonIdentity = !!identityId && !!identityToken;
+        const customHeader = shouldSetXLemonIdentity
+            ? { ...this.extraHeader, 'x-lemon-identity': identityToken }
+            : { ...this.extraHeader };
         const options = { customHeader, customOptions: this.extraOptions };
         const httpService = new SignedHttpService(options);
         return httpService.request(endpoint, objParams);

@@ -33,7 +33,7 @@ export class IdentityService {
 
         this.checkCachedToken()
             .then(result => this.logger.log('checkCachedToken: ', result))
-            .catch(err => this.logger.log('checkCachedToken: ', err));
+            .catch(() => this.logger.log('checkCachedToken: has no token'));
     }
 
     setOptions(options: LemonOptions) {

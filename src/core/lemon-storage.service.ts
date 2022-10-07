@@ -23,7 +23,7 @@ export class LemonStorageService {
 
     // eslint-disable-next-line @typescript-eslint/no-parameter-properties
     constructor(private project: string = 'lemon', private storage: Storage = new LocalStorageService()) {
-        this.prefix = `@${project.toUpperCase()}_LEMON_STORAGE`;
+        this.prefix = `@${project.toUpperCase()}`;
         this.storageService = storage;
     }
 

@@ -3,8 +3,8 @@ export interface LemonOAuthTokenResult {
     authId: string;
     credential: LemonCredentials;
     identityId: string;
-    identityPoolId: string;
     identityToken: string;
+    identityPoolId?: string;
     error?: any;
 }
 

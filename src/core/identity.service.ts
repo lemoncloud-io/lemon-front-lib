@@ -218,7 +218,7 @@ export class IdentityService {
         return 'build credentials!';
     }
 
-    private async refreshCachedToken(): Promise<LemonRefreshTokenResult | null> {
+    async refreshCachedToken(): Promise<LemonRefreshTokenResult | null> {
         this.logger.log('refreshCachedToken()...');
         const originToken: LemonOAuthTokenResult = await this.lemonStorage.getCachedLemonOAuthToken();
         const payload: SignaturePayload = {
@@ -256,7 +256,7 @@ export class IdentityService {
         const { credential } = refreshResult;
         const refreshToken: LemonOAuthTokenResult = {
             ...refreshResult,
-            identityPoolId: originToken.identityPoolId,
+            identityPoolId: originToken.identityPoolId || '',
             identityToken: originToken.identityToken,
         };
         await this.lemonStorage.saveLemonOAuthToken(refreshToken);

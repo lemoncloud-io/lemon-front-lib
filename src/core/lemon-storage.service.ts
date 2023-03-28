@@ -53,9 +53,8 @@ export class LemonStorageService {
     }
 
     async shouldRefreshToken(): Promise<boolean> {
-        const expiredTime = await this.storageService.getItem(`${this.prefix}.expiredTime`);
-        const now = new Date().getTime().toString();
-
+        const expiredTime = +(await this.storageService.getItem(`${this.prefix}.expiredTime`));
+        const now = new Date().getTime();
         return now >= expiredTime;
     }
 

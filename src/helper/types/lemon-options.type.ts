@@ -1,3 +1,5 @@
+import { AxiosRequestConfig } from 'axios';
+
 /**
  * default options for initializing service
  */
@@ -17,7 +19,7 @@ export interface LemonOptions {
     /**
      * extra options for axios request
      */
-    extraOptions?: any;
+    extraOptions?: Omit<AxiosRequestConfig, 'headers'>;
     /**
      * whether to add the x-lemon-identity to request header
      */

@@ -13,11 +13,12 @@ import {
     LemonRefreshTokenResult,
     LoggerService,
 } from '../helper';
+import { AxiosRequestConfig } from 'axios';
 
 export class IdentityService {
     private oauthURL: string;
     private extraHeader: any = {};
-    private extraOptions: any = {};
+    private extraOptions: Omit<AxiosRequestConfig, 'headers'> = {};
     private shouldUseXLemonIdentity: boolean = false;
 
     private readonly lemonStorage: LemonStorageService;

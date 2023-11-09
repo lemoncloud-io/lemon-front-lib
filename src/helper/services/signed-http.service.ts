@@ -1,4 +1,4 @@
-import * as AWS from 'aws-sdk/global';
+import { config as AWSConfig, Credentials } from 'aws-sdk/global';
 import { AxiosService } from './axios.service';
 import { LoggerService } from './logger.service';
 import { sigV4Client } from '../../vendor';
@@ -16,12 +16,12 @@ export interface SignedHttpOptions {
 }
 
 export class SignedHttpService {
-    private providerCredential: AWS.Credentials;
+    private providerCredential: Credentials;
     private customHeader: any;
     private customOptions: any;
     private logger: LoggerService;
 
-    constructor(options: SignedHttpOptions = {}, credentials?: AWS.Credentials) {
+    constructor(options: SignedHttpOptions = {}, credentials?: Credentials) {
         const { customHeader, customOptions } = options;
         this.customHeader = customHeader
             ? { 'Content-Type': 'application/json', ...customHeader }
@@ -53,13 +53,13 @@ export class SignedHttpService {
 
         return new Promise(resolve => {
             // prepare client
-            const ok = AWS.config && AWS.config.credentials;
+            const ok = AWSConfig && AWSConfig.credentials;
             let signedClient =
                 ok &&
                 sigV4Client.newClient({
-                    accessKey: AWS.config.credentials.accessKeyId,
-                    secretKey: AWS.config.credentials.secretAccessKey,
-                    sessionToken: AWS.config.credentials.sessionToken,
+                    accessKey: AWSConfig.credentials.accessKeyId,
+                    secretKey: AWSConfig.credentials.secretAccessKey,
+                    sessionToken: AWSConfig.credentials.sessionToken,
                     region: 'ap-northeast-2',
                     endpoint: endpoint,
                     host: this.extractHostname(endpoint),

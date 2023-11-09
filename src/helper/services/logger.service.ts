@@ -24,7 +24,6 @@ export interface FormatInterface {
 }
 
 export class LoggerService implements LogInterface {
-
     private utils: LoggerHelperService;
 
     private isNode: boolean;
@@ -162,7 +161,9 @@ export class LoggerService implements LogInterface {
         ];
 
         const dateText = `${zeroOrNull(year)}${year}-${zeroOrNull(month)}${month}-${zeroOrNull(day)}${day}`; // yyyy-mm-dd
-        const hoursText = `${zeroOrNull(hours)}${hours}:${zeroOrNull(minutes)}${minutes}:${zeroOrNull(seconds)}${seconds}`; //hh:mm:ss
+        const hoursText = `${zeroOrNull(hours)}${hours}:${zeroOrNull(minutes)}${minutes}:${zeroOrNull(
+            seconds
+        )}${seconds}`; //hh:mm:ss
         return `${dateText} ${hoursText}`;
     }
 }

@@ -5,20 +5,22 @@ export const createAsyncDelay = (duration: number) => {
     return new Promise<void>(resolve => setTimeout(() => resolve(), duration));
 };
 
-export const withRetries = (attempt: Function, nthTry: number, delay: number) => async (...args: any[]) => {
-    let retryCount = 0;
-    do {
-        try {
-            return await attempt(...args);
-        } catch (error) {
-            const isLastAttempt = retryCount === nthTry;
-            if (isLastAttempt) {
-                return Promise.reject(error);
+export const withRetries =
+    (attempt: any, nthTry: number, delay: number) =>
+    async (...args: any[]) => {
+        let retryCount = 0;
+        do {
+            try {
+                return await attempt(...args);
+            } catch (error) {
+                const isLastAttempt = retryCount === nthTry;
+                if (isLastAttempt) {
+                    return Promise.reject(error);
+                }
             }
-        }
-        await createAsyncDelay(delay);
-    } while (retryCount++ < nthTry);
-};
+            await createAsyncDelay(delay);
+        } while (retryCount++ < nthTry);
+    };
 
 export const hmac = (message: string, key: string) => {
     //! INFO: lemon-account-api
@@ -30,7 +32,7 @@ export const hmac = (message: string, key: string) => {
 export const calcSignature = (
     payload: SignaturePayload,
     current: string = new Date().toISOString(),
-    userAgent: string = navigator.userAgent,
+    userAgent: string = navigator.userAgent
 ) => {
     const authId = payload.authId || '';
     const accountId = payload.accountId || '';

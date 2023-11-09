@@ -21,8 +21,10 @@ export class LemonStorageService {
     private prefix: string;
     private storageService: Storage;
 
-    // eslint-disable-next-line @typescript-eslint/no-parameter-properties
-    constructor(private project: string = 'lemon', private storage: Storage = new LocalStorageService()) {
+    constructor(
+        private project: string = 'lemon',
+        private storage: Storage = new LocalStorageService()
+    ) {
         this.prefix = `@${project}`;
         this.storageService = storage;
     }
@@ -37,7 +39,7 @@ export class LemonStorageService {
 
     async getAllItems() {
         return await this.credentialItemList.reduce(async (promise, item) => {
-            let tmpResult: { [key: string]: string } = await promise.then();
+            const tmpResult: { [key: string]: string } = await promise.then();
             tmpResult[`${this.prefix}.${item}`] = await this.storageService.getItem(`${this.prefix}.${item}`);
             return Promise.resolve(tmpResult);
         }, Promise.resolve({}));
@@ -48,8 +50,7 @@ export class LemonStorageService {
         const secretKey = await this.storageService.getItem(`${this.prefix}.secretKey`);
         const expiredTime = await this.storageService.getItem(`${this.prefix}.expiredTime`);
 
-        const hasToken = accessKeyId !== null && secretKey !== null && expiredTime !== null;
-        return hasToken;
+        return accessKeyId !== null && secretKey !== null && expiredTime !== null;
     }
 
     async shouldRefreshToken(): Promise<boolean> {
@@ -62,13 +63,12 @@ export class LemonStorageService {
         const AccessKeyId = await this.storageService.getItem(`${this.prefix}.accessKeyId`);
         const SecretKey = await this.storageService.getItem(`${this.prefix}.secretKey`);
         const SessionToken = await this.storageService.getItem(`${this.prefix}.sessionToken`);
-        // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
         return { AccessKeyId, SecretKey, SessionToken } as LemonCredentials;
     }
 
     async getCachedLemonOAuthToken(): Promise<LemonOAuthTokenResult> {
         const result: any = await this.credentialItemList.reduce(async (promise, item) => {
-            let tmpResult: { [key: string]: string } = await promise.then();
+            const tmpResult: { [key: string]: string } = await promise.then();
             tmpResult[item] = await this.storageService.getItem(`${this.prefix}.${item}`);
             return Promise.resolve(tmpResult);
         }, Promise.resolve({}));
@@ -112,7 +112,7 @@ export class LemonStorageService {
 
     async clearLemonOAuthToken(): Promise<void> {
         await Promise.all(
-            this.credentialItemList.map(item => this.storageService.removeItem(`${this.prefix}.${item}`)),
+            this.credentialItemList.map(item => this.storageService.removeItem(`${this.prefix}.${item}`))
         );
         return;
     }

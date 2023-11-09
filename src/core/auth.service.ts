@@ -1,5 +1,4 @@
-import * as AWS from 'aws-sdk/global';
-
+import { Credentials } from 'aws-sdk/global';
 import { LemonOAuthTokenResult, LemonOptions } from '../helper';
 import { IdentityService } from './identity.service';
 import { Storage } from './lemon-storage.service';
@@ -40,7 +39,7 @@ export class AuthService {
      * generate AWS Credentials with token issued through LEMON-OAUTH-API
      * @param token
      */
-    async buildCredentialsByToken(token: LemonOAuthTokenResult): Promise<AWS.Credentials> {
+    async buildCredentialsByToken(token: LemonOAuthTokenResult): Promise<Credentials> {
         await this.identityService.buildCredentialsByToken(token);
         return await this.identityService.getCredentials();
     }
@@ -48,7 +47,7 @@ export class AuthService {
     /**
      * generate AWS Credentials from data stored on Local Storage
      */
-    async buildCredentialsByStorage(): Promise<AWS.Credentials> {
+    async buildCredentialsByStorage(): Promise<Credentials> {
         await this.identityService.buildCredentialsByStorage();
         return await this.identityService.getCredentials();
     }
@@ -56,7 +55,7 @@ export class AuthService {
     /**
      * get the current AWS Credentials and automatically renews the token when it expires. If has not, it returns null.
      */
-    getCredentials(): Promise<AWS.Credentials | null> {
+    getCredentials(): Promise<Credentials | null> {
         return this.identityService.getCredentials().catch(() => null);
     }
 
@@ -85,7 +84,7 @@ export class AuthService {
         endpoint: string,
         path: string,
         params?: any,
-        body?: any,
+        body?: any
     ): Promise<any> {
         return this.identityService.requestWithCredentials(method, endpoint, path, params, body);
     }

@@ -1,10 +1,9 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosPromise, Method, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosPromise, AxiosRequestConfig, AxiosResponse, Method } from 'axios';
 
 export class AxiosService {
     private options: AxiosRequestConfig;
     private axiosInstance: AxiosInstance;
 
-    // eslint-disable-next-line @typescript-eslint/no-parameter-properties
     constructor(private requestOptions: AxiosRequestConfig = {}) {
         this.options = requestOptions;
         this.axiosInstance = axios.create();
@@ -54,8 +53,7 @@ export class AxiosService {
         }
 
         return new Promise((resolve, reject) => {
-            request.then((response: AxiosResponse) => resolve(response.data))
-                .catch((err: Error) => reject(err));
+            request.then((response: AxiosResponse) => resolve(response.data)).catch((err: Error) => reject(err));
         });
     }
 }

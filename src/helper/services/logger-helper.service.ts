@@ -26,7 +26,6 @@ export const BROWSER_COLORS = {
 };
 
 export class LoggerHelperService {
-
     private colorSet: any;
     private logColors: any;
 

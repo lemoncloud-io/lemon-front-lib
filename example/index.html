@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+    </head>
+    <body>
+        <script type="text/javascript" src="../dist/index.js" charset="utf-8"></script>
+        <div>
+            <h3>HTTP Request</h3>
+            <button class="btn" onclick="getHello()">Request New Hello()</button>
+            <button class="btn" onclick="setNewHeader()">Set New Header</button>
+            <button class="btn" onclick="resetHeader()">Reset Header</button>
+        </div>
+        <div>
+            <h3>Result</h3>
+            <h4 id="result"></h4>
+        </div>
+
+        <script type="text/javascript">
+            var lemonOptions = {
+                project: 'test',
+                oAuthEndpoint: 'not-used',
+            };
+            var lemonCore = new Lemon.AuthService(lemonOptions);
+
+            function getHello() {
+                // var endpoint = 'https://hg9errxv25.execute-api.ap-northeast-2.amazonaws.com/prod/hello';
+                var endpoint = 'https://1bzbjlgj2a.execute-api.ap-northeast-2.amazonaws.com/dev/hello';
+                simpleGetRequest(endpoint);
+            }
+
+            function setNewHeader() {
+                var newOptions = {
+                    project: 'test',
+                    oAuthEndpoint: 'not-used',
+                    extraHeader: { 'x-lemon-language': 'ko' },
+                };
+                lemonCore.setLemonOptions(newOptions);
+            }
+
+            function resetHeader() {
+                lemonCore.setLemonOptions(lemonOptions);
+            }
+
+            function simpleGetRequest(endpoint) {
+                lemonCore
+                    .request('GET', endpoint, '/')
+                    .then(function (mock) {
+                        console.log('mock', mock);
+                        document.getElementById('result').innerText = JSON.stringify(mock);
+                    })
+                    .catch(function (err) {
+                        setErrorMessage(err);
+                    });
+            }
+
+            function setErrorMessage(err) {
+                console.error(err);
+                document.getElementById('result').innerText = 'ERROR: ' + err.message;
+            }
+        </script>
+    </body>
+</html>

@@ -11,6 +11,7 @@
     "scripts": {
         "prepare": "husky install",
         "clean": "rm -rf dist",
+        "start": "tsc -w",
         "build": "pnpm clean && tsup src/index.ts",
         "release": "pnpm run build && changeset publish",
         "test": "echo \"Error: no test specified\" && exit 1",
@@ -18,7 +19,6 @@
         "fix:lint": "eslint src --ext .ts --fix",
         "changeset": "npx changeset",
         "changeset:version": "npx changeset version"
-
     },
     "keywords": [
         "lemoncloud",
@@ -36,6 +36,7 @@
     "devDependencies": {
         "@changesets/cli": "^2.26.2",
         "@types/crypto-js": "^4.2.1",
+        "@types/jest": "^29.5.8",
         "@types/node": "^20.9.0",
         "@typescript-eslint/eslint-plugin": "^6.2.0",
         "@typescript-eslint/parser": "^6.2.0",

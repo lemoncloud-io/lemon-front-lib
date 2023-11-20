@@ -29,6 +29,10 @@ export class LemonStorageService {
         this.storageService = storage;
     }
 
+    updatePrefix(prefix: string) {
+        this.prefix = `@${prefix}`;
+    }
+
     async setItem(key: string, value: string) {
         return await this.storageService.setItem(`${this.prefix}.${key}`, value);
     }

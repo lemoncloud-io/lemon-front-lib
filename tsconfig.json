@@ -3,7 +3,7 @@
         "baseUrl": "./",
         "target": "es2015",
         "module": "commonjs",
-        "types": ["node"],
+        "types": ["node", "jest"],
         "esModuleInterop": true,
         "noImplicitAny": false,
         "forceConsistentCasingInFileNames": true,

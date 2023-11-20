@@ -39,6 +39,10 @@ export class IdentityService {
         this.setExtraData(options);
     }
 
+    updateStoragePrefix(projectName: string) {
+        this.lemonStorage.updatePrefix(projectName);
+    }
+
     getSavedCredentials(): Promise<{ [key: string]: string }> {
         return this.lemonStorage.getAllItems();
     }

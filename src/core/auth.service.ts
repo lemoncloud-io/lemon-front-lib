@@ -26,6 +26,7 @@ export class AuthService {
      */
     setLemonOptions(options: LemonOptions) {
         this.identityService.setOptions(options);
+        this.identityService.updateStoragePrefix(options.project);
     }
 
     /**

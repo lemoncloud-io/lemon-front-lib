@@ -1,5 +1,11 @@
 # @lemoncloud/lemon-front-lib
 
+## 1.3.16
+
+### Patch Changes
+
+-   downgrade axios
+
 ## 1.3.15
 
 ### Patch Changes

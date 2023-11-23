@@ -1,4 +1,4 @@
-import { config as AWSConfig, Credentials } from 'aws-sdk/global';
+import * as AWS from 'aws-sdk/global.js';
 // services
 import { LemonStorageService, Storage } from './lemon-storage.service';
 import { calcSignature, createAsyncDelay, SignedHttpService } from '../helper';
@@ -115,7 +115,7 @@ export class IdentityService {
         return this.getCredentials().then(() => this.request(method, endpoint, path, params, body));
     }
 
-    async getCredentials(): Promise<Credentials | null> {
+    async getCredentials(): Promise<AWS.Credentials | null> {
         const hasCachedToken = await this.lemonStorage.hasCachedToken();
         if (!hasCachedToken) {
             this.logger.info('has no cached token!');
@@ -137,7 +137,7 @@ export class IdentityService {
             return new Promise(resolve => resolve(null));
         }
 
-        const credentials = AWSConfig.credentials as Credentials;
+        const credentials = AWS.config.credentials as AWS.Credentials;
         const shouldRefresh = credentials.needsRefresh();
         if (shouldRefresh) {
             return credentials.refreshPromise().then(() => this.getCurrentCredentials());
@@ -166,7 +166,7 @@ export class IdentityService {
         }
 
         return new Promise(resolve => {
-            (<Credentials>AWSConfig.credentials).get(error => {
+            (<AWS.Credentials>AWS.config.credentials).get(error => {
                 if (error) {
                     this.logger.error('get AWSConfig.credentials error: ', error);
                 }
@@ -177,7 +177,7 @@ export class IdentityService {
     }
 
     logout(): Promise<boolean> {
-        AWSConfig.credentials = null;
+        AWS.config.credentials = null;
         return this.lemonStorage
             .clearLemonOAuthToken()
             .then(() => true)
@@ -269,19 +269,19 @@ export class IdentityService {
 
     private static createAWSCredentials(credential: LemonCredentials) {
         const { AccessKeyId, SecretKey, SessionToken } = credential;
-        AWSConfig.credentials = new Credentials(AccessKeyId, SecretKey, SessionToken);
+        AWS.config.credentials = new AWS.Credentials(AccessKeyId, SecretKey, SessionToken);
     }
 
-    private getCurrentCredentials(): Promise<Credentials> {
+    private getCurrentCredentials(): Promise<AWS.Credentials> {
         return new Promise((resolve, reject) => {
-            const credentials = AWSConfig.credentials as Credentials;
+            const credentials = AWS.config.credentials as AWS.Credentials;
             credentials.get(error => {
                 if (error) {
                     this.logger.error('Error on getCurrentCredentials: ', error);
                     reject(null);
                 }
                 this.logger.info('success to get AWS credentials');
-                const awsCredentials = AWSConfig.credentials as Credentials;
+                const awsCredentials = AWS.config.credentials as AWS.Credentials;
                 resolve(awsCredentials);
             });
         });

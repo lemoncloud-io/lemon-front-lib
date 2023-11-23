@@ -14,11 +14,14 @@
  * permissions and limitations under the License.
  */
 
-import * as CryptoJS from 'crypto-js';
+// import * as CryptoJS from 'crypto-js';
+import sha256 from 'crypto-js/sha256.js';
+import hmacSHA256 from 'crypto-js/hmac-sha256.js';
+import Hex from 'crypto-js/enc-hex.js';
 
-const SHA256 = CryptoJS.SHA256;
-const encHex = CryptoJS.enc.Hex;
-const HmacSHA256 = CryptoJS.HmacSHA256;
+const SHA256 = sha256;
+const encHex = Hex;
+const HmacSHA256 = hmacSHA256;
 
 const sigV4Client: { [key: string]: any } = {};
 

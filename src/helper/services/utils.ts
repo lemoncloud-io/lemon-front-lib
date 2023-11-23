@@ -1,5 +1,6 @@
-import * as CryptoJS from 'crypto-js';
 import { SignaturePayload } from '../types/lemon-oauth-token.type';
+import hmacSHA256 from 'crypto-js/hmac-sha256.js';
+import encBase64 from 'crypto-js/enc-base64.js';
 
 export const createAsyncDelay = (duration: number) => {
     return new Promise<void>(resolve => setTimeout(() => resolve(), duration));
@@ -25,8 +26,8 @@ export const withRetries =
 export const hmac = (message: string, key: string) => {
     //! INFO: lemon-account-api
     //! algorithm: sha256, encoding: base64
-    const hash = CryptoJS.HmacSHA256(message, key);
-    return CryptoJS.enc.Base64.stringify(hash);
+    const hash = hmacSHA256(message, key);
+    return encBase64.stringify(hash);
 };
 
 export const calcSignature = (

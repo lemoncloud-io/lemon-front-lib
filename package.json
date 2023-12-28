@@ -28,6 +28,7 @@
     "author": "Hyungtak Jin",
     "license": "MIT",
     "dependencies": {
+        "@azure/identity": "^4.0.0",
         "aws-sdk": "^2.1490.0",
         "axios": "0.19.0",
         "crypto-js": "^4.2.0",

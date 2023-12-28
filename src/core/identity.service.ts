@@ -1,7 +1,7 @@
 import * as AWS from 'aws-sdk/global.js';
 // services
 import { LemonStorageService, Storage } from './lemon-storage.service';
-import { calcSignature, createAsyncDelay, SignedHttpService } from '../helper';
+import { AxiosService, calcSignature, createAsyncDelay, SignedHttpService } from '../helper';
 // types
 import { RequiredHttpParameters, SignaturePayload } from '../helper';
 import {
@@ -52,17 +52,15 @@ export class IdentityService {
 
         const { credential } = token;
         const { AccessKeyId, SecretKey } = credential;
-        if (!AccessKeyId) {
-            throw new Error('.AccessKeyId (string) is required!');
-        }
-        if (!SecretKey) {
-            throw new Error('.SecretKey (string) is required!');
-        }
 
         // STEP 1. Save to localStorage
         await this.lemonStorage.saveLemonOAuthToken(token);
         // STEP 2. Set AWS Credential
-        IdentityService.createAWSCredentials(credential);
+        if (AccessKeyId && SecretKey) {
+            this.logger.log('Using AWS platform');
+            IdentityService.createAWSCredentials(credential);
+        }
+        this.logger.log('Using Azure platform');
     }
 
     async buildCredentialsByStorage(): Promise<void> {
@@ -101,8 +99,20 @@ export class IdentityService {
             ? { ...this.extraHeader, 'x-lemon-identity': identityToken }
             : { ...this.extraHeader };
         const options = { customHeader, customOptions: this.extraOptions };
-        const httpService = new SignedHttpService(options);
-        return httpService.request(endpoint, objParams);
+
+        // todo: Azure - this works - abstract this
+        const accessToken = identityToken;
+        const header = {
+            Authorization: `Bearer ${accessToken}`,
+        };
+        this.executeRequest(header, endpoint, objParams);
+
+        // AWS
+        const isAWS = false; //test
+        if (isAWS) {
+            const httpService = new SignedHttpService(options);
+            return httpService.request(endpoint, objParams);
+        }
     }
 
     requestWithCredentials(
@@ -137,11 +147,12 @@ export class IdentityService {
             return new Promise(resolve => resolve(null));
         }
 
-        const credentials = AWS.config.credentials as AWS.Credentials;
-        const shouldRefresh = credentials.needsRefresh();
-        if (shouldRefresh) {
-            return credentials.refreshPromise().then(() => this.getCurrentCredentials());
-        }
+        // AWS - temporary comments
+        // const credentials = AWS.config.credentials as AWS.Credentials;
+        // const shouldRefresh = credentials.needsRefresh();
+        // if (shouldRefresh) {
+        //     return credentials.refreshPromise().then(() => this.getCurrentCredentials());
+        // }
         return this.getCurrentCredentials();
     }
 
@@ -262,6 +273,8 @@ export class IdentityService {
             identityToken: originToken.identityToken,
         };
         await this.lemonStorage.saveLemonOAuthToken(refreshToken);
+
+        // AWS
         this.logger.log('create new credentials after refresh token');
         IdentityService.createAWSCredentials(credential);
         return refreshResult;
@@ -275,7 +288,8 @@ export class IdentityService {
     private getCurrentCredentials(): Promise<AWS.Credentials> {
         return new Promise((resolve, reject) => {
             const credentials = AWS.config.credentials as AWS.Credentials;
-            credentials.get(error => {
+
+            credentials?.get(error => {
                 if (error) {
                     this.logger.error('Error on getCurrentCredentials: ', error);
                     reject(null);
@@ -316,5 +330,26 @@ export class IdentityService {
             }
             await createAsyncDelay(500);
         } while (retryCount++ < nthTry);
+    }
+
+    // todo: abstract this
+    private executeRequest(header: any, endpoint: string, objParams: RequiredHttpParameters) {
+        // execute http request.
+        const { method, path, queryParams, bodyReq } = objParams;
+        const headers = header;
+        const axiosService = new AxiosService({ headers });
+        switch (method.toUpperCase()) {
+            case 'POST':
+                return axiosService.post(endpoint + path, bodyReq, queryParams);
+            case 'PUT':
+                return axiosService.put(endpoint + path, bodyReq, queryParams);
+            case 'DELETE':
+                return axiosService.delete(endpoint + path, queryParams);
+            case 'PATCH':
+                return axiosService.patch(endpoint + path, bodyReq, queryParams);
+            case 'GET':
+            default:
+                return axiosService.get(endpoint + path, queryParams);
+        }
     }
 }

@@ -56,11 +56,10 @@ export class LemonStorageService {
 
         // Azure
         const identityToken = await this.storageService.getItem(`${this.prefix}.identityToken`);
-        const accountId = await this.storageService.getItem(`${this.prefix}.accountId`);
 
         return (
             (accessKeyId !== null && secretKey !== null && expiredTime !== null) ||
-            (identityToken !== null && accountId !== null && expiredTime !== null)
+            (identityToken !== null && expiredTime !== null)
         );
     }
 

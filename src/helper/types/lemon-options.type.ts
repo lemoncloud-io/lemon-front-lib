@@ -1,5 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
 
+export type Cloud = 'aws' | 'azure';
+
 /**
  * default options for initializing service
  */
@@ -8,6 +10,10 @@ export interface LemonOptions {
      * project name
      */
     project: string;
+    /**
+     * target cloud
+     */
+    cloud: Cloud;
     /**
      * endpoint url for authentication
      */

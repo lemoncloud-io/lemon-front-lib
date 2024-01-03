@@ -56,10 +56,11 @@ export class IdentityService {
         const isAWS = this.options.cloud === 'aws';
         const isAzure = this.options.cloud === 'azure';
         if (isAWS) {
+            this.logger.log('Using AWS platform');
             return this.buildAWSCredentialsByToken(token);
         }
         if (isAzure) {
-            this.logger.log('Using AWS platform');
+            this.logger.log('Using Azure platform');
             return await this.lemonStorage.saveLemonOAuthToken(token);
         }
     }
@@ -170,6 +171,8 @@ export class IdentityService {
     }
 
     async isAuthenticated(): Promise<boolean> {
+        const isAWS = await this.lemonStorage.getItem(`accessKeyId`);
+
         const hasCachedToken = await this.lemonStorage.hasCachedToken();
         if (!hasCachedToken) {
             return false;
@@ -189,15 +192,26 @@ export class IdentityService {
             return false;
         }
 
-        return new Promise(resolve => {
-            (<AWS.Credentials>AWS.config.credentials).get(error => {
-                if (error) {
-                    this.logger.error('get AWSConfig.credentials error: ', error);
-                }
-                const isAuthenticated = !error;
+        if (isAWS) {
+            return new Promise(resolve => {
+                (<AWS.Credentials>AWS.config.credentials).get(error => {
+                    if (error) {
+                        this.logger.error('get AWSConfig.credentials error: ', error);
+                    }
+                    const isAuthenticated = !error;
+                    resolve(isAuthenticated);
+                });
+            });
+        }
+
+        // Note: Temporary solution that implies use of Azure platform since 'accessKeyId' property
+        //       is AWS specific and library currently support AWS and Azure only.
+        if (!isAWS) {
+            return new Promise(resolve => {
+                const isAuthenticated = true;
                 resolve(isAuthenticated);
             });
-        });
+        }
     }
 
     logout(): Promise<boolean> {

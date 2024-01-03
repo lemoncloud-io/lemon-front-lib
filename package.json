@@ -1,6 +1,6 @@
 {
     "name": "@lemoncloud/lemon-front-lib",
-    "version": "1.3.18",
+    "version": "1.4.0",
     "description": "Web Core Library for Lemoncloud",
     "exports": "./dist/index.js",
     "types": "./dist/index.d.ts",

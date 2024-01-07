@@ -1,7 +1,7 @@
 import { SignaturePayload } from '../types/lemon-oauth-token.type';
 import { calcSignature } from './utils';
 
-describe('UtilsSevice', () => {
+describe('Utils', () => {
     it('calcSignature()', async () => {
         //! lemon-account-api
         //! expect2(() => service.$auth.calcSignature({ ...$auth, id:authId })).toEqual('3KGbSFllLjSjrDORGq2uj8RHpKLabrNT6hKa429lP7M=');

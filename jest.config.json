@@ -6,5 +6,10 @@
     "collectCoverageFrom": ["<rootDir>/src/**/*.ts", "!<rootDir>/src/**/constant.ts", "!<rootDir>/src/**/type.ts"],
     "testPathIgnorePatterns": ["<rootDir>/node_modules"],
     "coverageReporters": ["html", "json"],
-    "testMatch": ["<rootDir>/src/**/*.spec.ts", "<rootDir>/src/**/*.test.ts"]
+    "testMatch": [
+        "<rootDir>/src/**/*.spec.ts",
+        "<rootDir>/src/**/*.test.ts",
+        "<rootDir>/packages/**/*.spec.ts",
+        "<rootDir>/packages/**/*.test.ts"
+    ]
 }

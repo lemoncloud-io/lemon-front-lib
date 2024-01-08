@@ -50,11 +50,17 @@ export class LemonStorageService {
     }
 
     async hasCachedToken(): Promise<boolean> {
+        // AWS
         const accessKeyId = await this.storageService.getItem(`${this.prefix}.accessKeyId`);
         const secretKey = await this.storageService.getItem(`${this.prefix}.secretKey`);
         const expiredTime = await this.storageService.getItem(`${this.prefix}.expiredTime`);
 
-        return accessKeyId !== null && secretKey !== null && expiredTime !== null;
+        // Azure
+        const identityToken = await this.storageService.getItem(`${this.prefix}.identityToken`);
+
+        const hasAwsToken = accessKeyId !== null && secretKey !== null && expiredTime !== null;
+        const hasAzureToken = identityToken !== null && expiredTime !== null;
+        return hasAwsToken || hasAzureToken;
     }
 
     async shouldRefreshToken(): Promise<boolean> {
@@ -90,6 +96,11 @@ export class LemonStorageService {
         return result;
     }
 
+    /**
+     * Required Azure keys: accountId, identityToken
+     * @param token
+     * @returns
+     */
     async saveLemonOAuthToken(token: LemonOAuthTokenResult): Promise<void> {
         const { accountId, authId, credential, identityId, identityPoolId, identityToken } = token;
         const { AccessKeyId, SecretKey, SessionToken } = credential;

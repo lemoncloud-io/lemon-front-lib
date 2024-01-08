@@ -70,7 +70,7 @@ Dockerfile
 # jest
 .jest.init.js
 coverage
-jest.config.js
+jest.config.json
 __mocks__
 __snapshots__
 __tests__

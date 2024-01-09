@@ -1,36 +1,13 @@
-import { AwsHttpService, AzureHttpService, HttpService, HttpServiceFactory } from './http.factory';
-import { IdentityFactory } from './identity.factory';
+import { FECoreOptions } from '../types';
+import { IdentityService } from '../types';
+import { AWSIdentityService } from '../identity/aws-identity.service';
+import { AzureIdentityService } from '../identity/azure-identity.service';
+import { IdentityFactory } from '../identity/identity.factory';
 import { AxiosRequestConfig } from 'axios';
-
-export interface CloudIdentity {
-    isAuthenticated(): Promise<boolean>;
-    request(): void;
-}
-
-export interface Options {
-    test: string;
-}
-
-export class AWSIdentity implements CloudIdentity {
-    _options: Options;
-
-    constructor(options: Options) {
-        this._options = options;
-    }
-
-    isAuthenticated(): Promise<boolean> {
-        return new Promise(resolve => resolve(true));
-    }
-    request(): void {}
-}
-
-export class AzureIdentity implements CloudIdentity {
-    isAuthenticated(): Promise<boolean> {
-        return new Promise(resolve => resolve(true));
-    }
-    request(): void {}
-}
-
+import { StorageService } from '../types/storage.service';
+import { StorageFactory } from '../storage/storage.factory';
+import { AWSStorageService } from '../storage/aws-storage.service';
+import { AzureStorageService } from '../storage/azure-storage.service';
 // export class IdentityFactory {
 //     static create<T extends CloudIdentity>(
 //         className: { new(object: unknown): T },
@@ -40,31 +17,6 @@ export class AzureIdentity implements CloudIdentity {
 //     }
 // }
 
-/////
-
-const CLOUD_TYPES = {
-    AWS: 'aws',
-    AZURE: 'azure',
-} as const;
-export type CloudType = (typeof CLOUD_TYPES)[keyof typeof CLOUD_TYPES];
-//
-// export type AWSOptions<T extends CloudType> = {
-//     cloud: T,
-//     project: string;
-// };
-//
-// export type AzureOptions<T extends CloudType> = {
-//     cloud: T,
-//     name: string;
-// };
-//
-// export type LemonOptionsData<T extends CloudType>
-//     = T extends 'aws' ? AWSOptions<T>
-//     : T extends 'azure' ? AzureOptions<T>
-//     : unknown
-// export type LemonOptions = LemonOptionsData<CloudType>;
-//
-//
 // export interface FECoreService {
 //     isAuthenticated(): Promise<boolean>;
 // }
@@ -109,115 +61,63 @@ export type CloudType = (typeof CLOUD_TYPES)[keyof typeof CLOUD_TYPES];
 //     }
 // }
 
-export abstract class IdentityService {
-    /** options for identity service */
-    private lemonOptions: LemonOptions;
-
-    /**
-     * initializes a new identity service
-     *
-     * @param options - lemon options
-     */
-    protected constructor(options: LemonOptions) {
-        this.lemonOptions = options;
-    }
-
-    /**
-     * set lemon options
-     *
-     * @param options - new lemon options
-     * @returns void
-     */
-    setLemonOptions(options: LemonOptions) {
-        this.lemonOptions = options;
-    }
-
-    /**
-     * returns the current lemon options
-     * @returns LemonOptions
-     */
-    getLemonOptions(): LemonOptions {
-        return this.lemonOptions;
-    }
-
-    /**
-     * Checks if user is authenticated
-     *
-     * @returns Promises that is authenticated
-     * @async
-     */
-    abstract isAuthenticated(): Promise<boolean>;
-}
-
-export class AwsIdentityService extends IdentityService {
-    constructor(options: LemonOptions) {
-        super(options);
-    }
-
-    isAuthenticated(): Promise<boolean> {
-        return new Promise(resolve => resolve(true));
-    }
-}
-
-export class AzureIdentityService extends IdentityService {
-    constructor(options: LemonOptions) {
-        super(options);
-    }
-
-    isAuthenticated(): Promise<boolean> {
-        return new Promise(resolve => resolve(true));
-    }
-}
-
-export interface LemonOptions {
-    project: string;
-    cloud: CloudType;
-    extraHeader?: any;
-    extraOptions?: Omit<AxiosRequestConfig, 'headers'>;
-    shouldUseXLemonIdentity?: boolean;
-}
-
 export class FECoreManager {
-    private lemonOptions: LemonOptions;
+    private options: FECoreOptions;
     private identityService: IdentityService;
-    private httpService: HttpService;
+    private storageService: StorageService;
 
-    constructor(options: LemonOptions) {
-        this.lemonOptions = options;
+    constructor(options: FECoreOptions) {
+        this.options = options;
     }
 
-    createIdentityService() {
-        switch (this.lemonOptions.cloud) {
+    createService() {
+        this.createIdentityService();
+        this.createStorageService();
+    }
+
+    setOptions(options: FECoreOptions): void {
+        this.options = options;
+        // TODO: reset service?
+    }
+
+    getAPIBuilder(method: string, url: string): APIBuilder {
+        // const httpService = new HttpService(this.identityService, this.storageService);
+        return new APIBuilder(this.identityService, method, url);
+    }
+
+    isAuthenticated(): Promise<boolean> {
+        return this.identityService.isAuthenticated();
+    }
+
+    private createIdentityService(): void {
+        switch (this.options.cloud) {
             case 'aws':
-                this.identityService = IdentityFactory.create(AwsIdentityService, this.lemonOptions);
+                this.identityService = IdentityFactory.create(AWSIdentityService, this.options);
                 return;
             case 'azure':
-                this.identityService = IdentityFactory.create(AzureIdentityService, this.lemonOptions);
+                this.identityService = IdentityFactory.create(AzureIdentityService, this.options);
                 return;
             default:
-                throw new Error(`Invalid cloud type: ${this.lemonOptions.cloud}`);
+                throw new Error(`Invalid cloud type: ${this.options.cloud}`);
         }
     }
 
-    createHttpService() {
-        switch (this.lemonOptions.cloud) {
+    private createStorageService(): void {
+        if (!this.options.project) {
+            throw new Error(`Invalid project: ${this.options.project}`);
+        }
+
+        const { project } = this.options;
+        switch (this.options.cloud) {
             case 'aws':
-                this.httpService = HttpServiceFactory.create(AwsHttpService);
+                this.storageService = StorageFactory.create(AWSStorageService, project);
                 return;
             case 'azure':
-                this.httpService = HttpServiceFactory.create(AzureHttpService);
+                this.storageService = StorageFactory.create(AzureStorageService, project);
                 return;
             default:
-                throw new Error(`Invalid cloud type: ${this.lemonOptions.cloud}`);
+                throw new Error(`Invalid cloud type: ${this.options.cloud}`);
         }
-    }
-
-    setLemonOptions(options: LemonOptions) {
-        this.lemonOptions = options;
-    }
-
-    getAPIBuilder(method: string, url: string) {
-        return new APIBuilder(method, url);
     }
 }
 
@@ -227,8 +127,12 @@ class APIBuilder {
     body: any;
     params: any;
     header: any;
+    options: Omit<AxiosRequestConfig, 'headers'>;
 
-    constructor(method: string, url: string) {
+    private readonly identityService: IdentityService;
+
+    constructor(identityService: IdentityService, method: string, url: string) {
+        this.identityService = identityService;
         this.method = method;
         this.url = url;
     }
@@ -248,7 +152,13 @@ class APIBuilder {
         return this;
     }
 
+    setOptions(options: Omit<AxiosRequestConfig, 'headers'>) {
+        this.options = options;
+        return this;
+    }
+
     build() {
+        // TODO: request
         return new API(this);
     }
 }

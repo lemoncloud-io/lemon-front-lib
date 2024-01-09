@@ -1,9 +1,4 @@
-export abstract class StorageService {
-    storage: Storage;
-    abstract setItem(key: string, value: any): void;
-    abstract getItem(key: string): string;
-    abstract removeItem(key: string): void;
-}
+import { GeneralAsyncStorage } from '../types/storage.service';
 
 let dataMemory: object = {};
 class MemoryStorage implements Storage {
@@ -34,7 +29,7 @@ class MemoryStorage implements Storage {
     }
 }
 
-export class LocalStorageService implements StorageService {
+export class LocalStorageService implements GeneralAsyncStorage {
     storage: Storage;
 
     constructor() {
@@ -47,15 +42,15 @@ export class LocalStorageService implements StorageService {
         }
     }
 
-    setItem(key: string, value: string) {
-        this.storage.setItem(key, value);
+    async setItem(key: string, value: string) {
+        return await this.storage.setItem(key, value);
     }
 
-    getItem(key: string): string {
-        return this.storage.getItem(key);
+    async getItem(key: string): Promise<string> {
+        return await this.storage.getItem(key);
     }
 
-    removeItem(key: string) {
-        this.storage.removeItem(key);
+    async removeItem(key: string) {
+        return await this.storage.removeItem(key);
     }
 }

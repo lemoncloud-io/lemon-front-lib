@@ -1,17 +1,12 @@
 import { FECoreManager } from './fe-core.manager';
 
-describe('Utils', () => {
-    //
-    // it('calcSignature()', async () => {
-    //     const aws = IdentityFactory.create(AWSIdentity, { test: '123' });
-    //     expect(aws._options.test).toEqual('123')
-    // });
-
-    it('FECoreManager()', async () => {
+describe('FECoreManager', () => {
+    it('should be initialized()', async () => {
         const feCoreManager = new FECoreManager({ cloud: 'aws', project: 'test' });
-        feCoreManager.createIdentityService();
-        feCoreManager.createHttpService();
-        // const identityService = feCoreManager.createIdentity();
+        feCoreManager.createService();
+        expect(feCoreManager).toBeDefined();
+        const isAuth = await feCoreManager.isAuthenticated();
+        expect(isAuth).toEqual(true);
         // const result = await identityService.isAuthenticated();
         // expect(result).toEqual(true);
         const api = feCoreManager
@@ -20,5 +15,25 @@ describe('Utils', () => {
             .setBody({ test: 'test' })
             .build();
         api.request();
+    });
+
+    it('should return isAuthenticated result', async () => {
+        const feCoreManager = new FECoreManager({ cloud: 'aws', project: 'test' });
+        feCoreManager.createService();
+        const isAuth = await feCoreManager.isAuthenticated();
+        expect(isAuth).toEqual(true);
+    });
+
+    it('should build APIBuilder', async () => {
+        const feCoreManager = new FECoreManager({ cloud: 'aws', project: 'test' });
+        feCoreManager.createService();
+
+        const api = feCoreManager
+            .getAPIBuilder('GET', '/d1/test')
+            .setParams({ test: 'test' })
+            .setBody({ test: 'test' })
+            .build();
+        const res = api.request();
+        console.log(res);
     });
 });

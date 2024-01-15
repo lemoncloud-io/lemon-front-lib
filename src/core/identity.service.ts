@@ -1,17 +1,18 @@
 import * as AWS from 'aws-sdk/global.js';
 // services
+import { AxiosService, calcSignature, Cloud, createAsyncDelay, SignedHttpService } from '../helper';
 import { LemonStorageService, Storage } from './lemon-storage.service';
-import { AxiosService, calcSignature, createAsyncDelay, SignedHttpService } from '../helper';
 // types
-import { RequiredHttpParameters, SignaturePayload } from '../helper';
+import { AxiosRequestConfig } from 'axios';
 import {
     LemonCredentials,
     LemonOAuthTokenResult,
     LemonOptions,
     LemonRefreshTokenResult,
     LoggerService,
+    RequiredHttpParameters,
+    SignaturePayload,
 } from '../helper';
-import { AxiosRequestConfig } from 'axios';
 
 export class IdentityService {
     private oauthURL: string;
@@ -53,15 +54,15 @@ export class IdentityService {
     async buildCredentialsByToken(token: LemonOAuthTokenResult): Promise<void> {
         this.logger.log('buildCredentialsByToken()...');
         // TODO: refactor below. create class
-        const isAWS = this.options.cloud === 'aws';
-        const isAzure = this.options.cloud === 'azure';
-        if (isAWS) {
+        const cloud = this.options.cloud;
+
+        if (cloud === 'aws') {
             this.logger.log('Using AWS platform');
-            return this.buildAWSCredentialsByToken(token);
+            return this.buildAWSCredentialsByToken(token, cloud);
         }
-        if (isAzure) {
+        if (cloud === 'azure') {
             this.logger.log('Using Azure platform');
-            return await this.lemonStorage.saveLemonOAuthToken(token);
+            return await this.lemonStorage.saveLemonOAuthToken(token, cloud);
         }
     }
 
@@ -90,12 +91,14 @@ export class IdentityService {
         params: any = {},
         bodyReq?: any
     ): Promise<any> {
-        const queryParams = { ...params };
-        const objParams: RequiredHttpParameters = { method, path, queryParams, bodyReq };
-
         const isAWS = this.options.cloud === 'aws';
         const isAzure = this.options.cloud === 'azure';
+        const identityToken = (await this.lemonStorage.getItem('identityToken')) || '';
+        let queryParams = { ...params };
+        let objParams: RequiredHttpParameters = { method, path, bodyReq };
+
         if (isAWS) {
+            objParams = { method, path, queryParams, bodyReq };
             if (!this.shouldUseXLemonIdentity) {
                 const options = { customHeader: this.extraHeader, customOptions: this.extraOptions };
                 const httpService = new SignedHttpService(options);
@@ -104,7 +107,6 @@ export class IdentityService {
 
             // add X-Lemon-Identity
             const identityId = (await this.lemonStorage.getItem('identityId')) || '';
-            const identityToken = (await this.lemonStorage.getItem('identityToken')) || '';
             const shouldSetXLemonIdentity = !!identityId && !!identityToken;
             const customHeader = shouldSetXLemonIdentity
                 ? { ...this.extraHeader, 'x-lemon-identity': identityToken }
@@ -115,10 +117,15 @@ export class IdentityService {
         }
 
         if (isAzure) {
-            const accessToken = (await this.lemonStorage.getItem('identityToken')) || '';
+            const hostKey = (await this.lemonStorage.getItem('hostKey')) || '';
+            queryParams = { ...queryParams, code: hostKey, clientId: 'default' };
+            objParams = { ...objParams, queryParams: queryParams };
+            const accessToken = (await this.lemonStorage.getItem('accessToken')) || '';
             const header = {
-                Authorization: `Bearer ${accessToken}`,
+                Authorization: `Bearer ${identityToken}`,
+                'x-lemon-identity': accessToken,
             };
+
             return this.executeRequest(header, endpoint, objParams);
         }
     }
@@ -135,32 +142,29 @@ export class IdentityService {
 
     async getCredentials(): Promise<AWS.Credentials | null> {
         const isAWS = this.options.cloud === 'aws';
-        const isAzure = this.options.cloud === 'azure';
-        if (isAzure) {
-            return null;
+
+        const hasCachedToken = await this.lemonStorage.hasCachedToken();
+        if (!hasCachedToken) {
+            this.logger.info('has no cached token!');
+            return new Promise(resolve => resolve(null));
         }
+
+        const shouldRefreshToken = await this.lemonStorage.shouldRefreshToken();
+        if (shouldRefreshToken) {
+            this.logger.info('should refresh token!');
+            const refreshed = await this.refreshCachedToken();
+            if (refreshed) {
+                return await this.getCurrentCredentials();
+            }
+        }
+
+        const cachedToken = await this.lemonStorage.hasCachedToken();
+        if (!cachedToken) {
+            this.logger.info('has no cached token!');
+            return new Promise(resolve => resolve(null));
+        }
+
         if (isAWS) {
-            const hasCachedToken = await this.lemonStorage.hasCachedToken();
-            if (!hasCachedToken) {
-                this.logger.info('has no cached token!');
-                return new Promise(resolve => resolve(null));
-            }
-
-            const shouldRefreshToken = await this.lemonStorage.shouldRefreshToken();
-            if (shouldRefreshToken) {
-                this.logger.info('should refresh token!');
-                const refreshed = await this.refreshCachedToken();
-                if (refreshed) {
-                    return await this.getCurrentCredentials();
-                }
-            }
-
-            const cachedToken = await this.lemonStorage.hasCachedToken();
-            if (!cachedToken) {
-                this.logger.info('has no cached token!');
-                return new Promise(resolve => resolve(null));
-            }
-
             const credentials = AWS.config.credentials as AWS.Credentials;
             const shouldRefresh = credentials.needsRefresh();
             if (shouldRefresh) {
@@ -171,7 +175,7 @@ export class IdentityService {
     }
 
     async isAuthenticated(): Promise<boolean> {
-        const isAWS = await this.lemonStorage.getItem(`accessKeyId`);
+        const isAWS = !!(await this.lemonStorage.getItem(`accessKeyId`));
 
         const hasCachedToken = await this.lemonStorage.hasCachedToken();
         if (!hasCachedToken) {
@@ -260,7 +264,8 @@ export class IdentityService {
 
     async refreshCachedToken(): Promise<LemonRefreshTokenResult | null> {
         this.logger.log('refreshCachedToken()...');
-        const originToken: LemonOAuthTokenResult = await this.lemonStorage.getCachedLemonOAuthToken();
+        const cloud = this.options.cloud;
+        const originToken: LemonOAuthTokenResult = await this.lemonStorage.getCachedLemonOAuthToken(cloud);
         const payload: SignaturePayload = {
             authId: originToken.authId,
             accountId: originToken.accountId,
@@ -294,16 +299,22 @@ export class IdentityService {
         }
 
         const { credential } = refreshResult;
-        const refreshToken: LemonOAuthTokenResult = {
+        let refreshToken: LemonOAuthTokenResult = {
             ...refreshResult,
-            identityPoolId: originToken.identityPoolId || '',
             identityToken: originToken.identityToken,
         };
-        await this.lemonStorage.saveLemonOAuthToken(refreshToken);
+        await this.lemonStorage.saveLemonOAuthToken(refreshToken, cloud);
 
-        // AWS
-        this.logger.log('create new credentials after refresh token');
-        IdentityService.createAWSCredentials(credential);
+        if (cloud === 'aws') {
+            this.logger.log('create new credentials after refresh token');
+            refreshToken = {
+                ...refreshResult,
+                identityPoolId: originToken.identityPoolId || '',
+                identityToken: originToken.identityToken,
+            };
+            IdentityService.createAWSCredentials(credential);
+        }
+
         return refreshResult;
     }
 
@@ -380,7 +391,7 @@ export class IdentityService {
         }
     }
 
-    private async buildAWSCredentialsByToken(token: LemonOAuthTokenResult): Promise<void> {
+    private async buildAWSCredentialsByToken(token: LemonOAuthTokenResult, cloud: Cloud): Promise<void> {
         const { credential } = token;
         const { AccessKeyId, SecretKey } = credential;
         if (!AccessKeyId) {
@@ -390,7 +401,7 @@ export class IdentityService {
             throw new Error('.SecretKey (string) is required!');
         }
         this.logger.log('Using AWS platform');
-        await this.lemonStorage.saveLemonOAuthToken(token);
+        await this.lemonStorage.saveLemonOAuthToken(token, cloud);
         return IdentityService.createAWSCredentials(credential);
     }
 }

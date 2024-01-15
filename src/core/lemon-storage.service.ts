@@ -1,4 +1,4 @@
-import { LemonCredentials, LemonOAuthTokenResult, LocalStorageService } from '../helper';
+import { Cloud, LemonCredentials, LemonOAuthTokenResult, LocalStorageService } from '../helper';
 
 export interface Storage {
     getItem(key: string, ...params: any): any;
@@ -17,6 +17,7 @@ export class LemonStorageService {
         'secretKey',
         'sessionToken',
         'expiredTime',
+        'hostKey',
     ];
     private prefix: string;
     private storageService: Storage;
@@ -50,16 +51,20 @@ export class LemonStorageService {
     }
 
     async hasCachedToken(): Promise<boolean> {
+        const expiredTime = await this.storageService.getItem(`${this.prefix}.expiredTime`);
+
         // AWS
         const accessKeyId = await this.storageService.getItem(`${this.prefix}.accessKeyId`);
         const secretKey = await this.storageService.getItem(`${this.prefix}.secretKey`);
-        const expiredTime = await this.storageService.getItem(`${this.prefix}.expiredTime`);
 
         // Azure
         const identityToken = await this.storageService.getItem(`${this.prefix}.identityToken`);
+        const accessToken = await this.storageService.getItem(`${this.prefix}.accessToken`);
+        const hostKey = await this.storageService.getItem(`${this.prefix}.hostKey`);
 
         const hasAwsToken = accessKeyId !== null && secretKey !== null && expiredTime !== null;
-        const hasAzureToken = identityToken !== null && expiredTime !== null;
+        const hasAzureToken =
+            identityToken !== null && accessToken !== null && hostKey !== null && expiredTime !== null;
         return hasAwsToken || hasAzureToken;
     }
 
@@ -76,22 +81,32 @@ export class LemonStorageService {
         return { AccessKeyId, SecretKey, SessionToken } as LemonCredentials;
     }
 
-    async getCachedLemonOAuthToken(): Promise<LemonOAuthTokenResult> {
+    async getCachedLemonOAuthToken(cloud: Cloud): Promise<LemonOAuthTokenResult> {
         const result: any = await this.credentialItemList.reduce(async (promise, item) => {
             const tmpResult: { [key: string]: string } = await promise.then();
             tmpResult[item] = await this.storageService.getItem(`${this.prefix}.${item}`);
             return Promise.resolve(tmpResult);
         }, Promise.resolve({}));
 
-        const AccessKeyId = await this.storageService.getItem(`${this.prefix}.accessKeyId`);
-        const SecretKey = await this.storageService.getItem(`${this.prefix}.secretKey`);
-        const SessionToken = await this.storageService.getItem(`${this.prefix}.sessionToken`);
-        result.credential = { AccessKeyId, SecretKey, SessionToken };
+        if (cloud === 'aws') {
+            const AccessKeyId = await this.storageService.getItem(`${this.prefix}.accessKeyId`);
+            const SecretKey = await this.storageService.getItem(`${this.prefix}.secretKey`);
+            const SessionToken = await this.storageService.getItem(`${this.prefix}.sessionToken`);
+            result.credential = { AccessKeyId, SecretKey, SessionToken };
 
-        delete result.accessKeyId;
-        delete result.secretKey;
-        delete result.sessionToken;
-        delete result.expiredTime;
+            delete result.accessKeyId;
+            delete result.secretKey;
+            delete result.sessionToken;
+            delete result.expiredTime;
+        }
+
+        if (cloud === 'azure') {
+            const HostKey = await this.storageService.getItem(`${this.prefix}.hostKey`);
+            result.credential = { HostKey };
+
+            delete result.hostKey;
+            delete result.expiredTime;
+        }
 
         return result;
     }
@@ -101,21 +116,27 @@ export class LemonStorageService {
      * @param token
      * @returns
      */
-    async saveLemonOAuthToken(token: LemonOAuthTokenResult): Promise<void> {
-        const { accountId, authId, credential, identityId, identityPoolId, identityToken } = token;
-        const { AccessKeyId, SecretKey, SessionToken } = credential;
+    async saveLemonOAuthToken(token: LemonOAuthTokenResult, cloud: Cloud): Promise<void> {
+        const { accountId, authId, credential, identityId, identityPoolId, identityToken, accessToken } = token;
+        const { AccessKeyId, SecretKey, SessionToken, hostKey } = credential;
 
         // save items...
         this.storageService.setItem(`${this.prefix}.accountId`, accountId || '');
         this.storageService.setItem(`${this.prefix}.authId`, authId || '');
         this.storageService.setItem(`${this.prefix}.identityId`, identityId || '');
-        this.storageService.setItem(`${this.prefix}.identityPoolId`, identityPoolId || '');
         this.storageService.setItem(`${this.prefix}.identityToken`, identityToken || '');
 
-        // credential for AWS
-        this.storageService.setItem(`${this.prefix}.accessKeyId`, AccessKeyId || '');
-        this.storageService.setItem(`${this.prefix}.secretKey`, SecretKey || '');
-        this.storageService.setItem(`${this.prefix}.sessionToken`, SessionToken || '');
+        if (cloud === 'aws') {
+            this.storageService.setItem(`${this.prefix}.identityPoolId`, identityPoolId || '');
+            this.storageService.setItem(`${this.prefix}.accessKeyId`, AccessKeyId || '');
+            this.storageService.setItem(`${this.prefix}.secretKey`, SecretKey || '');
+            this.storageService.setItem(`${this.prefix}.sessionToken`, SessionToken || '');
+        }
+
+        if (cloud === 'azure') {
+            this.storageService.setItem(`${this.prefix}.hostKey`, hostKey || '');
+            this.storageService.setItem(`${this.prefix}.accessToken`, accessToken || '');
+        }
 
         // set expired time
         const TIME_DELAY = 0.5; // 0.5 = 30minutes, 1 = 1hour

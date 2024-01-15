@@ -1,6 +1,6 @@
 {
     "name": "@lemoncloud/lemon-front-lib",
-    "version": "1.4.1",
+    "version": "1.4.2",
     "description": "Web Core Library for Lemoncloud",
     "exports": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -19,7 +19,8 @@
         "fix:prettier": "prettier \"src/**/*.ts\" --write",
         "fix:lint": "eslint src --ext .ts --fix",
         "changeset": "npx changeset",
-        "changeset:version": "npx changeset version"
+        "changeset:version": "npx changeset version",
+        "build:pack": "pnpm build && pnpm pack"
     },
     "keywords": [
         "lemoncloud",

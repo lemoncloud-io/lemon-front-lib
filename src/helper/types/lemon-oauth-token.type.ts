@@ -6,6 +6,7 @@ export interface LemonOAuthTokenResult {
     identityToken: string;
     identityPoolId?: string;
     error?: any;
+    accessToken?: string;
 }
 
 export interface LemonCredentials {
@@ -13,6 +14,7 @@ export interface LemonCredentials {
     SecretKey: string;
     Expiration?: string;
     SessionToken?: string;
+    hostKey?: string;
 }
 
 export interface LemonRefreshTokenResult {

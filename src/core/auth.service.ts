@@ -1,5 +1,5 @@
 import * as AWS from 'aws-sdk/global.js';
-import { LemonOAuthTokenResult, LemonOptions } from '../helper';
+import { LemonKMS, LemonOAuthTokenResult, LemonOptions } from '../helper';
 import { IdentityService } from './identity.service';
 import { Storage } from './lemon-storage.service';
 
@@ -51,6 +51,13 @@ export class AuthService {
     async buildCredentialsByStorage(): Promise<AWS.Credentials> {
         await this.identityService.buildCredentialsByStorage();
         return await this.identityService.getCredentials();
+    }
+
+    /**
+     * @param kms Save kms to LocalStorage
+     */
+    async saveKMS(kms: LemonKMS): Promise<void> {
+        await this.identityService.saveKMS(kms);
     }
 
     /**

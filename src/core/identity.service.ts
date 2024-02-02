@@ -1,6 +1,6 @@
 import * as AWS from 'aws-sdk/global.js';
 // services
-import { AxiosService, calcSignature, Cloud, createAsyncDelay, SignedHttpService } from '../helper';
+import { AxiosService, calcSignature, Cloud, createAsyncDelay, LemonKMS, SignedHttpService } from '../helper';
 import { LemonStorageService, Storage } from './lemon-storage.service';
 // types
 import { AxiosRequestConfig } from 'axios';
@@ -49,6 +49,13 @@ export class IdentityService {
 
     getSavedCredentials(): Promise<{ [key: string]: string }> {
         return this.lemonStorage.getAllItems();
+    }
+
+    async saveKMS(kms: LemonKMS): Promise<void> {
+        const cloud = this.options.cloud;
+        if (cloud === 'aws') {
+            return await this.lemonStorage.saveKMS(kms);
+        }
     }
 
     async buildCredentialsByToken(token: LemonOAuthTokenResult): Promise<void> {

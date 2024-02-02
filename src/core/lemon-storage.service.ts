@@ -1,4 +1,4 @@
-import { Cloud, LemonCredentials, LemonOAuthTokenResult, LocalStorageService } from '../helper';
+import { Cloud, LemonCredentials, LemonKMS, LemonOAuthTokenResult, LocalStorageService } from '../helper';
 
 export interface Storage {
     getItem(key: string, ...params: any): any;
@@ -150,6 +150,14 @@ export class LemonStorageService {
         await Promise.all(
             this.credentialItemList.map(item => this.storageService.removeItem(`${this.prefix}.${item}`))
         );
+        return;
+    }
+
+    async saveKMS(kms: LemonKMS): Promise<void> {
+        const kmsArn = kms.arn;
+
+        this.storageService.setItem(`${this.prefix}.kmsArn`, kmsArn || '');
+
         return;
     }
 }

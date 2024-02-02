@@ -1,3 +1,7 @@
+export interface LemonKMS {
+    arn: string;
+}
+
 export interface LemonOAuthTokenResult {
     accountId: string;
     authId: string;
